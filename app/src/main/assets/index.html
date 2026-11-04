@@ -695,6 +695,24 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
 .emo-cells{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr))}
 .emo-cells button{border:0;background:none;font-size:25px;height:44px;border-radius:8px;cursor:pointer;padding:0}
 .emo-cells button:hover,.emo-cells button.on{background:color-mix(in srgb,var(--gold) 22%,transparent)}
+/* ---------- Reaktionen als ein Button ---------- */
+.rx-sum{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:2px 10px 2px 5px;font:inherit;cursor:pointer;line-height:1}
+.rx-sum.on{border-color:var(--gold)}
+.rx-es{display:inline-flex}
+.rx-es .rx-e{font-size:18px;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:var(--surface);box-shadow:0 0 0 2px var(--surface)}
+.rx-es .rx-e+.rx-e{margin-left:-5px}
+.rx-sum .rx-n{font-size:14px;color:var(--muted)}
+.pc-c .rx-sum{padding:1px 8px 1px 4px} .pc-c .rx-es .rx-e{font-size:14px;width:20px;height:20px} .pc-c .rx-sum .rx-n{font-size:12px}
+.rx-list-box{height:auto;max-height:min(70vh,520px)}
+.rx-ftab{flex:none;border:1px solid var(--line);background:none;color:var(--ink);border-radius:999px;padding:5px 11px;font:inherit;font-size:14px;cursor:pointer;white-space:nowrap}
+.rx-ftab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.rx-filter{gap:6px}
+.rx-people{padding:6px 14px 14px}
+.rx-person{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line)}
+.rx-person:last-child{border-bottom:0}
+.rx-pn{display:flex;flex-direction:column} .rx-pn b{font-weight:600} .rx-pn small{font-size:12px;color:var(--muted)}
+.rx-person.me{cursor:pointer}
+.rx-pe{font-size:24px}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -3040,35 +3058,76 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     const uid = ME().uid;
     return window.KSV_CLOUD_MODE ? ref.update({ ["reaktionen." + uid]: val }) : ref.update({ reaktionen: { ...(obj.reaktionen || {}), [uid]: val } });
   }
+  // Reaktionen: pro Person genau ein Emoji (ältere Einträge mit mehreren: das zuletzt gewählte zählt)
+  function reactList(all) {
+    return Object.entries(all).map(([u, v]) => ({ u, n: v?.n || "?", e: (v?.e || []).slice(-1)[0] })).filter(r => r.e);
+  }
+  function openReactSheet(all, uid, onRemove) {
+    if (emoClose) emoClose();
+    const list = reactList(all), counts = {};
+    list.forEach(r => counts[r.e] = (counts[r.e] || 0) + 1);
+    const order = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+    const ov = el("div", "emo-sheet"), box = el("div", "emo-box rx-list-box"); ov.setAttribute("role", "dialog"); ov.setAttribute("aria-modal", "true"); ov.setAttribute("aria-label", "Reaktionen");
+    const head = el("div", "emo-head"), tabs = el("div", "emo-tabs rx-filter"), x = el("button", "iconbtn", "Schließen"); x.type = "button";
+    const body = el("div", "emo-grid rx-people");
+    head.append(tabs, x); box.append(head, body); ov.append(box);
+    const close = () => { ov.remove(); emoClose = null; document.removeEventListener("keydown", key, true); };
+    const key = e => { if (e.key === "Escape") { e.stopPropagation(); close(); } };
+    let filter = null;
+    const draw = () => {
+      tabs.textContent = "";
+      [[null, "Alle " + list.length], ...order.map(e => [e, e + " " + counts[e]])].forEach(([f, label]) => {
+        const t = el("button", "rx-ftab" + (filter === f ? " on" : ""), label); t.type = "button";
+        t.onclick = () => { filter = f; draw(); }; tabs.append(t);
+      });
+      body.textContent = "";
+      list.filter(r => !filter || r.e === filter)
+        .sort((a, b) => (a.u === uid ? -1 : b.u === uid ? 1 : a.n.localeCompare(b.n, "de")))
+        .forEach(r => {
+          const row = el("div", "rx-person");
+          const nm = el("div", "rx-pn"); nm.append(el("b", "", r.n + (r.u === uid ? " (du)" : "")));
+          if (r.u === uid) nm.append(el("small", "", "Tippen zum Entfernen"));
+          row.append(nm, el("span", "rx-pe", r.e));
+          if (r.u === uid) { row.classList.add("me"); row.tabIndex = 0; row.setAttribute("role", "button"); row.onclick = () => { close(); onRemove(); }; }
+          body.append(row);
+        });
+    };
+    draw();
+    x.onclick = close; ov.onclick = e => { if (e.target === ov) close(); };
+    document.addEventListener("keydown", key, true);
+    document.body.append(ov); emoClose = close;
+  }
   function reactBar(key, obj, ref, ctx) {
-    const box = el("div", "rx"), all = obj.reaktionen || {}, uid = ME().uid, mine = all[uid]?.e || [];
-    const toggle = e => {
-      const next = mine.includes(e) ? mine.filter(x => x !== e) : [...mine, e];
+    const box = el("div", "rx"), all = obj.reaktionen || {}, uid = ME().uid, myE = (all[uid]?.e || []).slice(-1)[0] || null;
+    const mine = myE ? [myE] : [];
+    const choose = e => {
+      const next = myE === e ? [] : [e];   // gleiches Emoji erneut = entfernen, sonst ersetzen
       planPick = null;
       saveReaction(ref, obj, { e: next, n: myName() }).then(() => {
-        if (!mine.includes(e) && ctx.an && ctx.an !== uid)
+        if (next.length && ctx.an && ctx.an !== uid)
           notify({ kat: "antworten", an: "uid:" + ctx.an, tab: "plan", titel: ctx.titel, text: `${myName()} reagiert mit ${e}${ctx.was ? " auf " + ctx.was : ""}` });
       }).catch(err => planMsg("Reaktion nicht gespeichert: " + (err.message || err.code), true));
     };
-    const used = [...EMOJIS];   // feste Reihenfolge, danach weitere Emojis in der Reihenfolge ihres Auftretens
-    Object.values(all).forEach(v => (v?.e || []).forEach(e => { if (!used.includes(e)) used.push(e); }));
-    used.forEach(e => {
-      const who = Object.values(all).filter(v => (v?.e || []).includes(e)).map(v => v.n || "?");
-      if (!who.length) return;
-      const b = el("button", "rx-chip" + (mine.includes(e) ? " on" : "")); b.type = "button";
-      b.append(el("span", "rx-e", e), el("span", "rx-n", String(who.length)));
-      b.title = who.join(", "); b.setAttribute("aria-label", `${e} ${who.length}: ${who.join(", ")}`); b.setAttribute("aria-pressed", String(mine.includes(e)));
-      b.onclick = () => toggle(e); box.append(b);
-    });
+    const list = reactList(all);
+    if (list.length) {
+      const counts = {}; list.forEach(r => counts[r.e] = (counts[r.e] || 0) + 1);
+      const order = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+      const b = el("button", "rx-sum" + (myE ? " on" : "")); b.type = "button";
+      const em = el("span", "rx-es"); order.slice(0, 4).forEach(e => em.append(el("span", "rx-e", e)));
+      b.append(em, el("span", "rx-n", String(list.length)));
+      b.setAttribute("aria-label", `${list.length} Reaktionen: ${list.map(r => r.n + " " + r.e).join(", ")}. Liste anzeigen`);
+      b.onclick = () => openReactSheet(all, uid, () => choose(myE));
+      box.append(b);
+    }
     const add = el("button", "rx-add" + (planPick === key ? " on" : "")); add.type = "button"; add.setAttribute("aria-label", "Mit Emoji reagieren"); add.setAttribute("aria-expanded", String(planPick === key));
     add.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="12" r="7.5"/><path d="M8.3 13.8c.7 1 1.6 1.5 2.7 1.5s2-.5 2.7-1.5"/><path d="M8.7 10h.01M13.3 10h.01"/><path d="M19.5 3v4M17.5 5h4"/></svg>';
     add.onclick = () => { planPick = planPick === key ? null : key; planRender(); };
     box.append(add);
     if (planPick === key) {
       const pk = el("div", "rx-pick"); pk.setAttribute("role", "group"); pk.setAttribute("aria-label", "Emoji auswählen");
-      EMOJIS.forEach(e => { const b = el("button", mine.includes(e) ? "on" : "", e); b.type = "button"; b.setAttribute("aria-pressed", String(mine.includes(e))); b.onclick = () => toggle(e); pk.append(b); });
+      EMOJIS.forEach(e => { const b = el("button", myE === e ? "on" : "", e); b.type = "button"; b.setAttribute("aria-pressed", String(myE === e)); b.onclick = () => choose(e); pk.append(b); });
       const more = el("button", "rx-more", "+"); more.type = "button"; more.setAttribute("aria-label", "Alle Emojis anzeigen"); more.title = "Alle Emojis";
-      more.onclick = () => openEmojiSheet(mine, e => toggle(e));
+      more.onclick = () => openEmojiSheet(mine, e => choose(e));
       pk.append(more);
       box.append(pk);
     }
