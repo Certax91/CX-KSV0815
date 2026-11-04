@@ -1,0 +1,32 @@
+// Zugriffsregeln für die Vereins-Version des KSV 08/15 Spielbuchs.
+// In der Firebase-Konsole unter Firestore Database → Regeln einfügen und „Veröffentlichen“.
+// VERWALTER_EMAIL durch die E-Mail-Adresse des Verwalters (kleingeschrieben) ersetzen.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function angemeldet() { return request.auth != null && request.auth.token.email_verified == true; }
+    function verwalterMail() { return angemeldet() && request.auth.token.email.lower() == 'VERWALTER_EMAIL'; }
+    function hatProfil() { return angemeldet() && exists(/databases/$(database)/documents/nutzer/$(request.auth.uid)); }
+    function rolle() { return hatProfil() ? get(/databases/$(database)/documents/nutzer/$(request.auth.uid)).data.rolle : ''; }
+    function darfLesen() { return verwalterMail() || rolle() in ['lesen', 'schreiben', 'admin']; }
+    function darfSchreiben() { return verwalterMail() || rolle() in ['schreiben', 'admin']; }
+    function istVerwalter() { return verwalterMail() || rolle() == 'admin'; }
+
+    // Spielbuch: Einstellungen, Spieltage, Regelwerk
+    match /config/{id}    { allow read: if darfLesen(); allow write: if darfSchreiben(); }
+    match /spieltage/{id} { allow read: if darfLesen(); allow write: if darfSchreiben(); }
+    match /regelwerk/{id} { allow read: if darfLesen(); allow write: if darfSchreiben(); }
+
+    // Konten: jeder sieht sein eigenes; registrieren nur als „warten“; Rechte vergibt der Verwalter
+    match /nutzer/{uid} {
+      allow read: if (request.auth != null && request.auth.uid == uid) || istVerwalter();
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['email', 'name', 'rolle', 'spielerId', 'angelegt'])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.spielerId == null
+        && (request.resource.data.rolle == 'warten' || (verwalterMail() && request.resource.data.rolle == 'admin'));
+      allow update, delete: if istVerwalter();
+    }
+  }
+}

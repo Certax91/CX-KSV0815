@@ -1,0 +1,47 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Versionsnummer steigt mit jedem GitHub-Build, damit sich die App über die alte Version installieren lässt
+def runNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+
+// Signaturschlüssel kommt aus den GitHub-Secrets (siehe .github/workflows/build.yml), nie aus dem Repository
+def keystorePath = System.getenv("KSV_KEYSTORE")
+def keystorePass = System.getenv("KSV_KEYSTORE_PASSWORD")
+def hasKey = keystorePath != null && keystorePass != null && file(keystorePath).exists()
+
+android {
+    namespace 'de.cx.ksv0815'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'de.cx.ksv0815'
+        minSdk 29
+        targetSdk 34
+        versionCode runNumber
+        versionName "1.0.${runNumber}"
+    }
+
+    signingConfigs {
+        if (hasKey) {
+            release {
+                storeFile file(keystorePath)
+                storePassword keystorePass
+                keyAlias 'ksv0815'
+                keyPassword keystorePass
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (hasKey) signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
