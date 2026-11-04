@@ -2,6 +2,11 @@ plugins {
     id 'com.android.application'
 }
 
+// Push-Nachrichten: Firebase wird nur eingebunden, wenn google-services.json vorhanden ist
+if (file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
+}
+
 // Versionsnummer steigt mit jedem GitHub-Build, damit sich die App über die alte Version installieren lässt
 def runNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
 
@@ -44,4 +49,9 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+}
+
+dependencies {
+    implementation platform('com.google.firebase:firebase-bom:33.5.1')
+    implementation 'com.google.firebase:firebase-messaging'
 }

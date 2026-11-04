@@ -10,7 +10,9 @@ window.KSV_FIREBASE = {
   projectId: "ksv0815",
   storageBucket: "ksv0815.firebasestorage.app",
   messagingSenderId: "794915316570",
-  appId: "1:794915316570:web:6ef711c7457adf16f5c963"
+  appId: "1:794915316570:web:6ef711c7457adf16f5c963",
+  // Öffentlicher Schlüssel für Web-Push (Firebase → Projekteinstellungen → Cloud Messaging → Web-Push-Zertifikate)
+  vapidKey: ""
 };
 /* Beispiel:
 window.KSV_FIREBASE = {

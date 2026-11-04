@@ -1,6 +1,9 @@
 package de.cx.ksv0815;
 
 import android.app.Activity;
+import android.app.NotificationManager;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -24,6 +27,11 @@ import android.webkit.WebViewClient;
 import android.webkit.WebResourceRequest;
 import android.widget.Toast;
 
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.messaging.FirebaseMessaging;
+
+import org.json.JSONObject;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,6 +47,7 @@ public class MainActivity extends Activity {
     private static final int FILE_CHOOSER = 4711;
     private WebView web;
     private ValueCallback<Uri[]> fileCallback;
+    private String pendingTab;   // Rubrik aus einer angetippten Benachrichtigung
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +68,15 @@ public class MainActivity extends Activity {
 
         web.addJavascriptInterface(new Bridge(), "AndroidApp");
 
+        pendingTab = getIntent() != null ? getIntent().getStringExtra("tab") : null;
+        PushService.ensureChannel(this);
+
         web.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                openTab();
+            }
+
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
@@ -91,6 +108,22 @@ public class MainActivity extends Activity {
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
         else web.loadUrl("file:///android_asset/index.html");
+    }
+
+    /** App wurde über eine Benachrichtigung geöffnet, während sie schon lief. */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        pendingTab = intent.getStringExtra("tab");
+        openTab();
+    }
+
+    private void openTab() {
+        if (pendingTab == null || web == null) return;
+        String js = "window.__ksvGoTab && window.__ksvGoTab(" + JSONObject.quote(pendingTab) + ")";
+        pendingTab = null;
+        web.evaluateJavascript(js, null);
     }
 
     @Override
@@ -180,6 +213,39 @@ public class MainActivity extends Activity {
                 try { startActivity(i); } catch (Exception e) { toast("Keine Kalender-App gefunden."); }
             });
             return "ok";
+        }
+
+        // ---------- Push-Nachrichten ----------
+
+        /** true, wenn Firebase eingerichtet ist (google-services.json beim Bauen vorhanden). */
+        @JavascriptInterface
+        public boolean pushAvailable() {
+            try { return !FirebaseApp.getApps(MainActivity.this).isEmpty(); } catch (Throwable t) { return false; }
+        }
+
+        /** Erlaubnis anfragen (Android 13+) und Gerätekennung holen; Ergebnis an window.__ksvPushToken(token, fehler). */
+        @JavascriptInterface
+        public void requestPush() {
+            runOnUiThread(() -> {
+                if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED)
+                    requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 77);
+                try {
+                    FirebaseMessaging.getInstance().getToken().addOnCompleteListener(t -> {
+                        String tok = t.isSuccessful() && t.getResult() != null ? t.getResult() : "";
+                        String err = t.isSuccessful() ? "" : String.valueOf(t.getException());
+                        web.evaluateJavascript("window.__ksvPushToken && window.__ksvPushToken(" + JSONObject.quote(tok) + ", " + JSONObject.quote(err) + ")", null);
+                    });
+                } catch (Throwable e) {
+                    web.evaluateJavascript("window.__ksvPushToken && window.__ksvPushToken('', " + JSONObject.quote(String.valueOf(e)) + ")", null);
+                }
+            });
+        }
+
+        /** Sind Benachrichtigungen für die App in Android erlaubt? */
+        @JavascriptInterface
+        public boolean notificationsAllowed() {
+            NotificationManager nm = getSystemService(NotificationManager.class);
+            return nm != null && nm.areNotificationsEnabled();
         }
 
         // ---------- Regelwerk (PDF) ----------

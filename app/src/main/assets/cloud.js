@@ -95,6 +95,9 @@
     ".konto-row select{border:1px solid var(--line,#ccc);background:var(--bg,#fff);color:var(--ink,#111);border-radius:6px;padding:5px 6px;font:inherit;font-size:13px;max-width:100%}",
     ".konto-row select.need{border-color:var(--gold,#c98a12)}",
     ".konto-me{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:14px}",
+    ".push-list{display:flex;flex-direction:column;gap:4px;margin-top:6px}",
+    ".push-cb{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.35;cursor:pointer}",
+    ".push-cb input{margin-top:2px}",
     ".kass-cb{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;cursor:pointer;padding:4px 2px}",
     ".konto-me .tag{font-size:11px;font-weight:700;border:1px solid var(--gold,#c98a12);color:var(--gold-ink,#8a5d06);border-radius:999px;padding:1px 8px}",
     ".ro .fab,.ro #regelUpload,.ro #bkImport{display:none!important}"
@@ -207,7 +210,11 @@
         // Alle anderen werden abgewiesen und als „wartet auf Freischaltung“ angelegt.
         var mk = function (rolle) { return ref.set({ email: u.email, name: pendingName || u.displayName || String(u.email).split("@")[0], rolle: rolle, spielerId: null, angelegt: firebase.firestore.FieldValue.serverTimestamp() }); };
         var first = ADMIN ? (String(u.email || "").toLowerCase() === ADMIN ? "admin" : "warten") : "admin";
-        mk(first).catch(function (e) { if (first === "admin") return mk("warten"); throw e; })
+        mk(first).then(function () { return "first"; }, function (e) { if (first === "admin") return mk("warten").then(function () { return "warten"; }); throw e; })
+          .then(function (r) {
+            if (r === "warten") fs.collection("ereignisse").add({ kat: "verwaltung", an: "verwalter", tab: "set", titel: "Neue Registrierung",
+              text: (pendingName || u.displayName || u.email) + " wartet auf Freischaltung.", von: u.uid, zeit: Date.now() }).catch(function () { });
+          })
           .catch(function (e) { viewError("Konto konnte nicht angelegt werden: " + msgOf(e)); });
         return;
       }
@@ -225,11 +232,19 @@
     var canWrite = !!DARF_SCHREIBEN[d.rolle];
     me = { uid: u.uid, email: u.email, name: d.name || "", rolle: d.rolle, spielerId: d.spielerId || null, canWrite: canWrite, admin: d.rolle === "admin", kassierer: !!d.kassierer };
     window.KSV_ME = me;
-    window.KSV_LOGOUT = function () { auth.signOut(); };
+    window.KSV_LOGOUT = function () {
+      var t = ""; try { t = localStorage.getItem("ksv-push-token") || ""; localStorage.removeItem("ksv-push-token"); } catch (e) { }
+      (t ? fs.doc("geraete/" + t).delete().catch(function () { }) : Promise.resolve()).then(function () { auth.signOut(); });
+    };
     document.body.classList.add("cloud");
     document.body.classList.toggle("admin", me.admin);
     document.body.classList.toggle("ro", !canWrite);
     window.KSV_CLOUD = cloudApi();
+    window.KSV_EVENT = function (ev) {
+      if (!ev || !ev.titel) return;
+      fs.collection("ereignisse").add({ kat: ev.kat || "planung", an: ev.an || "alle", tab: ev.tab || "", titel: String(ev.titel).slice(0, 120),
+        text: String(ev.text || "").slice(0, 300), von: u.uid, zeit: Date.now() }).catch(function () { });
+    };
     resolveReady({
       db: fs,
       user: {
@@ -303,6 +318,96 @@
     return p;
   }
 
+
+  // ---------- Push-Nachrichten: Gerät anmelden und Themen wählen ----------
+  // Die Nachrichten verschickt ein zeitgesteuerter GitHub-Ablauf (scripts/push.mjs) alle ca. 10 Minuten.
+  var THEMEN = [
+    ["spiel", "Neue Spieltage"],
+    ["kasse", "Offene Beträge und bestätigte Zahlungen"],
+    ["planung", "Neue oder geänderte Termine, Abstimmungen und Notizen"],
+    ["antworten", "Zusagen und Stimmen zu meinen Einträgen"],
+    ["erinnerung", "Erinnerung am Vortag eines Termins und an offene Beträge"],
+    ["regeln", "Änderungen am Regelwerk"],
+    ["verwaltung", "Freischaltungen und gemeldete Zahlungen (Verwalter/Kassierer)"]
+  ];
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var standalone = window.matchMedia && (matchMedia("(display-mode: standalone)").matches || navigator.standalone);
+  function pushArt() {
+    if (window.AndroidApp && window.AndroidApp.requestPush) return window.AndroidApp.pushAvailable && window.AndroidApp.pushAvailable() ? "android" : "android-aus";
+    if (!("serviceWorker" in navigator) || !("Notification" in window) || location.protocol !== "https:") return "nein";
+    if (isIOS && !standalone) return "ios-homescreen";
+    if (!CFG.vapidKey) return "web-aus";
+    return "web";
+  }
+  function tokenSpeichern(token, art) {
+    try { localStorage.setItem("ksv-push-token", token); } catch (e) { }
+    return fs.doc("geraete/" + token).set({ uid: me.uid, plattform: art, zeit: Date.now() });
+  }
+  function webToken() {
+    return Notification.requestPermission().then(function (perm) {
+      if (perm !== "granted") throw new Error("Benachrichtigungen wurden im Browser nicht erlaubt.");
+      return load("firebase/firebase-messaging-compat.js").catch(function () { return load("https://www.gstatic.com/firebasejs/" + VER + "/firebase-messaging-compat.js"); });
+    }).then(function () {
+      return navigator.serviceWorker.register("firebase-messaging-sw.js");
+    }).then(function (reg) {
+      var m = firebase.messaging();
+      m.onMessage(function (p) { var n = p.notification || {}; reg.showNotification(n.title || "KSV 08/15", { body: n.body || "", icon: "icons/icon-192.png" }); });
+      return m.getToken({ vapidKey: CFG.vapidKey, serviceWorkerRegistration: reg });
+    });
+  }
+  function buildPush(grid) {
+    var art = pushArt();
+    var box = h("div", "field set-keep"); box.appendChild(h("span", "label", "Benachrichtigungen"));
+    var st = h("span", "msg", ""), btn = h("button", "iconbtn", ""); btn.type = "button"; btn.style.alignSelf = "flex-start";
+    var list = h("div", "push-list");
+    box.appendChild(st); box.appendChild(btn); box.appendChild(list);
+    grid.appendChild(box);
+    var token = ""; try { token = localStorage.getItem("ksv-push-token") || ""; } catch (e) { }
+    var draw = function () {
+      btn.hidden = !(art === "android" || art === "web");
+      btn.textContent = token ? "Auf diesem Gerät ausschalten" : "Auf diesem Gerät einschalten";
+      st.textContent = token ? "Dieses Gerät bekommt Nachrichten." :
+        art === "ios-homescreen" ? "Auf dem iPhone zuerst in Safari über „Teilen → Zum Home-Bildschirm“ ablegen und die App von dort öffnen." :
+        art === "android-aus" || art === "web-aus" ? "Push-Nachrichten sind noch nicht eingerichtet." :
+        art === "nein" ? "Dieser Browser unterstützt keine Push-Nachrichten." : "Dieses Gerät bekommt noch keine Nachrichten.";
+    };
+    window.__ksvPushToken = function (tok, err) {
+      btn.disabled = false;
+      if (!tok) { st.textContent = "Einschalten fehlgeschlagen" + (err ? ": " + err : "."); return; }
+      tokenSpeichern(tok, "android").then(function () { token = tok; draw(); }).catch(function (e) { st.textContent = msgOf(e); });
+    };
+    btn.onclick = function () {
+      btn.disabled = true;
+      if (token) {
+        var t = token; token = ""; try { localStorage.removeItem("ksv-push-token"); } catch (e) { }
+        fs.doc("geraete/" + t).delete().catch(function () { });
+        if (art === "web" && firebase.messaging) try { firebase.messaging().deleteToken().catch(function () { }); } catch (e) { }
+        btn.disabled = false; draw(); return;
+      }
+      st.textContent = "Wird eingeschaltet …";
+      if (art === "android") { window.AndroidApp.requestPush(); return; }
+      webToken().then(function (tok) { return tokenSpeichern(tok, "web").then(function () { token = tok; }); })
+        .catch(function (e) { st.textContent = "Einschalten fehlgeschlagen: " + (e && e.message || e); })
+        .then(function () { btn.disabled = false; if (token) draw(); });
+    };
+    // Themen (für alle Geräte des Kontos)
+    fs.doc("nutzer/" + me.uid).get().then(function (snap) {
+      var prefs = (snap.exists && snap.data().push) || {};
+      THEMEN.forEach(function (t) {
+        if (t[0] === "verwaltung" && !me.admin && !me.kassierer) return;
+        var l = h("label", "push-cb"), c = h("input"); c.type = "checkbox"; c.checked = prefs[t[0]] !== false;
+        c.onchange = function () {
+          var upd = {}; upd["push." + t[0]] = c.checked;
+          fs.doc("nutzer/" + me.uid).update(upd).catch(function (e) { c.checked = !c.checked; st.textContent = msgOf(e); });
+        };
+        l.appendChild(c); l.appendChild(document.createTextNode(" " + t[1])); list.appendChild(l);
+      });
+    }).catch(function () { });
+    // Token des Geräts aktuell halten (z. B. nach Neuinstallation)
+    if (token) fs.doc("geraete/" + token).set({ uid: me.uid, plattform: art.indexOf("android") === 0 ? "android" : "web", zeit: Date.now() }).catch(function () { });
+    draw();
+  }
+
   // ---------- Optionen: Konto, Mitglieder & Rechte, Übernahme der lokalen Daten ----------
   function buildKonto() {
     var settings = document.getElementById("settings"); if (!settings) return;
@@ -319,9 +424,11 @@
     var pl = h("span", "msg", ""); line.appendChild(pl);
     acc.appendChild(line);
     acc.appendChild(h("span", "msg", me.email));
-    var out = button("Abmelden", "iconbtn", function () { auth.signOut(); }); out.style.alignSelf = "flex-start"; out.style.marginTop = "6px";
+    var out = button("Abmelden", "iconbtn", function () { window.KSV_LOGOUT(); }); out.style.alignSelf = "flex-start"; out.style.marginTop = "6px";
     acc.appendChild(out);
     grid.appendChild(acc);
+
+    buildPush(grid);
 
     var players = [];
     fs.doc("config/main").onSnapshot(function (s) {
@@ -358,7 +465,12 @@
         var rl = h("select"); rl.setAttribute("aria-label", "Rechte von " + (d.name || ""));
         Object.keys(ROLLEN).forEach(function (k) { var o = h("option", null, ROLLEN[k]); o.value = k; rl.appendChild(o); });
         rl.value = d.rolle; rl.disabled = self; if (d.rolle === "warten") rl.classList.add("need");
-        rl.onchange = function () { fs.doc("nutzer/" + x.id).update({ rolle: rl.value }).catch(function (e) { umsg.textContent = msgOf(e); }); };
+        rl.onchange = function () {
+          var vorher = d.rolle;
+          fs.doc("nutzer/" + x.id).update({ rolle: rl.value }).then(function () {
+            if (vorher === "warten" && DARF_LESEN[rl.value] && window.KSV_EVENT) window.KSV_EVENT({ kat: "verwaltung", an: "uid:" + x.id, tab: "stand", titel: "Freigeschaltet", text: "Du kannst das Spielbuch des KSV 08/15 jetzt sehen." });
+          }).catch(function (e) { umsg.textContent = msgOf(e); });
+        };
         var kl = h("label", "kass-cb"), kc = h("input"); kc.type = "checkbox"; kc.checked = !!d.kassierer;
         kc.onchange = function () { fs.doc("nutzer/" + x.id).update({ kassierer: kc.checked }).catch(function (e) { kc.checked = !kc.checked; umsg.textContent = msgOf(e); }); };
         kl.appendChild(kc); kl.appendChild(document.createTextNode(" Kassierer"));
@@ -418,7 +530,7 @@
   function boot() {
     show(function (box) { box.appendChild(h("div", "auth-msg", "Verbinde …")); });
     loadSdk().then(function () {
-      var conf = {}; Object.keys(CFG).forEach(function (k) { if (k !== "adminEmail") conf[k] = CFG[k]; });
+      var conf = {}; Object.keys(CFG).forEach(function (k) { if (k !== "adminEmail" && k !== "vapidKey") conf[k] = CFG[k]; });
       fb = firebase.initializeApp(conf);
       auth = firebase.auth(); auth.languageCode = "de";
       fs = firebase.firestore();

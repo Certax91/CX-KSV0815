@@ -1,0 +1,42 @@
+name: Push-Nachrichten
+
+# Verschickt die Benachrichtigungen der Vereins-Version (siehe scripts/push.mjs).
+# Voraussetzung: GitHub-Secret FIREBASE_SERVICE_ACCOUNT (Dienstkonto-Schlüssel aus Firebase). Ohne Secret passiert nichts.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: push
+  cancel-in-progress: false
+
+jobs:
+  senden:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      HAS_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        if: env.HAS_KEY == 'true'
+
+      - uses: actions/setup-node@v4
+        if: env.HAS_KEY == 'true'
+        with:
+          node-version: 20
+
+      - name: Firebase Admin installieren
+        if: env.HAS_KEY == 'true'
+        run: npm install --no-save --no-audit --no-fund --prefix scripts firebase-admin@12
+
+      - name: Nachrichten senden
+        if: env.HAS_KEY == 'true'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          WEB_URL: https://certax91.github.io/CX-KSV0815/
+        run: node scripts/push.mjs
+
+      - name: Hinweis
+        if: env.HAS_KEY != 'true'
+        run: echo "Kein Secret FIREBASE_SERVICE_ACCOUNT hinterlegt – es werden keine Nachrichten verschickt."

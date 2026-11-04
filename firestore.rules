@@ -46,8 +46,22 @@ service cloud.firestore {
       }
     }
 
+    // Push-Nachrichten: Ereignisse melden (nur schreiben; gelesen und gelöscht werden sie vom Versand-Ablauf)
+    match /ereignisse/{id} {
+      allow create: if angemeldet() && request.resource.data.von == request.auth.uid
+        && (darfLesen() || (request.resource.data.kat == 'verwaltung' && request.resource.data.an == 'verwalter'));
+    }
+    // Geräte, die Nachrichten bekommen: jedes Konto verwaltet nur seine eigenen
+    match /geraete/{token} {
+      allow create, update: if angemeldet() && request.resource.data.uid == request.auth.uid;
+      allow delete: if angemeldet() && resource.data.uid == request.auth.uid;
+    }
+
     match /nutzer/{uid} {
       allow read: if (request.auth != null && request.auth.uid == uid) || istVerwalter();
+      // eigene Auswahl der Benachrichtigungs-Themen
+      allow update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['push']);
       allow create: if request.auth != null && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['email', 'name', 'rolle', 'spielerId', 'angelegt'])
         && request.resource.data.email == request.auth.token.email

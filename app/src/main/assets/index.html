@@ -979,6 +979,9 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
   const money = (g, pid) => { const v = g.scores?.[pid]; return v == null ? null : vOf(v, unitOf(g), g.date); };
   const feeOf = (g, pid) => { const f = g.fees?.[pid]; return f == null ? null : f; };
   const PAY = { paid: "bezahlt", check: "wird geprüft", open: "offen" };
+  // Push-Nachrichten: Ereignis melden → wird von GitHub Actions per Firebase Cloud Messaging verschickt (siehe cloud.js)
+  // kat: spiel | kasse | planung | antworten | erinnerung | regeln | verwaltung · an: alle | kassierer | verwalter | spieler:<id> | uid:<konto>
+  const notify = ev => { try { window.KSV_EVENT && window.KSV_EVENT(ev); } catch {} };
   // Kassierer: darf Zahlungen als bezahlt bestätigen (lokale App: immer)
   const isKass = () => !window.KSV_ME || !!window.KSV_ME.kassierer;
   const setPay = (g, pid, st) => db.collection("spieltage").doc(g.id).update({ pay: { ...(g.pay || {}), [pid]: st } });
@@ -1481,11 +1484,23 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     if (editing !== id && games.some(g => g.id === id)) return say(`Für den ${fmtDate(date)} gibt es schon einen Spieltag. Zeile im Spielbuch antippen, um ihn zu bearbeiten.`, true);
     if (!db) return say("Speichern ist gerade nicht möglich: keine Verbindung zum Spielbuch.", true);
     $("saveBtn").disabled = true;
+    const prevG = editing ? games.find(x => x.id === editing) : null;
+    const payNow = Object.fromEntries([...document.querySelectorAll('#pgrid select[data-kind="o"]')].map(x => [x.dataset.pid, x.value]));
     try {
       await db.collection("spieltage").doc(id).set({ date, unit: entryUnit, scores: sc, places, absent, pay: Object.fromEntries([...document.querySelectorAll('#pgrid select[data-kind="o"]')].filter(x => x.dataset.pid in sc || x.dataset.pid in fs).map(x => [x.dataset.pid, x.value])), fees: fs, excluded: $("fExcl").checked, noFee: $("fNoFee").checked, double: $("fDouble").checked,
         note: $("fNote").value.trim(), updated: new Date().toISOString() });
       if (editing && editing !== id) await db.collection("spieltage").doc(editing).delete();
       if (cfg.mode !== entryUnit) { cfg.mode = entryUnit; saveCfg(); }
+      // Nachrichten: neuer Spieltag für alle, neue offene Beträge für den jeweiligen Spieler
+      try {
+        const gNew = { id, date, unit: entryUnit, scores: sc, fees: fs, absent, places, pay: payNow };
+        if (!prevG) notify({ kat: "spiel", an: "alle", tab: "book", titel: "Neuer Spieltag eingetragen", text: `Der Spieltag vom ${fmtDate(date)} steht im Spielbuch.` });
+        Object.keys({ ...sc, ...fs }).forEach(pid => {
+          const amt = openAmt(gNew, pid), was = prevG ? payOf(prevG, pid) : "paid";
+          if (amt > 0 && payOf(gNew, pid) === "open" && (was !== "open" || !prevG))
+            notify({ kat: "kasse", an: "spieler:" + pid, tab: "stand", titel: "Neuer offener Betrag", text: `${eur(amt)} vom Spieltag ${fmtDate(date)} – in der App bezahlen.` });
+        });
+      } catch {}
       say(`Spieltag ${fmtDate(date)} gespeichert.`);
       editing = null; resetInputs(); render(); closeEntry(`Spieltag ${fmtDate(date)} gespeichert.`);
     } catch (e) { say(e?.code === "invalid_argument" ? "Du hast keine Schreibrechte für dieses Spielbuch." : "Speichern fehlgeschlagen. Bitte erneut versuchen.", true); }
@@ -1844,7 +1859,10 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
       ok: "Weiter zu PayPal", okClass: "pay-btn", onOk: () => openExternal(url) });   // PayPal direkt beim Tippen öffnen (sonst blockt der Browser)
     if (!ok) return;
     detailBusy = true; renderDetail();
-    try { for (const g of list) await setPay(g, p.id, "check"); $("pdMsg").textContent = `${eur(sum)} gemeldet – die Bezahlung wird geprüft.`; }
+    try {
+      for (const g of list) await setPay(g, p.id, "check"); $("pdMsg").textContent = `${eur(sum)} gemeldet – die Bezahlung wird geprüft.`;
+      notify({ kat: "verwaltung", an: "kassierer", tab: "stand", titel: "Zahlung prüfen", text: `${p.name} hat ${eur(sum)} über PayPal bezahlt.` });
+    }
     catch (e) { $("pdMsg").textContent = "Status konnte nicht gesetzt werden: " + (e?.message || e?.code || "unbekannter Fehler"); }
     detailBusy = false; renderDetail();
   }
@@ -1888,7 +1906,10 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
           const y = el("button", "btn", "Ja, bezahlt"); y.type = "button"; y.disabled = detailBusy;
           y.onclick = async () => {
             detailBusy = true; renderDetail();
-            try { for (const g of openGames) await setPay(g, p.id, "paid"); $("pdMsg").textContent = `${eur(openSum)} als bezahlt markiert.`; }
+            try {
+              for (const g of openGames) await setPay(g, p.id, "paid"); $("pdMsg").textContent = `${eur(openSum)} als bezahlt markiert.`;
+              notify({ kat: "kasse", an: "spieler:" + p.id, tab: "stand", titel: "Zahlung bestätigt", text: `${eur(openSum)} sind als bezahlt eingetragen. Danke!` });
+            }
             catch (e) { $("pdMsg").textContent = "Markieren fehlgeschlagen: " + (e?.message || e?.code || "unbekannter Fehler"); }
             detailBusy = false; detailConfirm = false; renderDetail();
           };
@@ -2638,7 +2659,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
       regelExtract(b64bytes(b64)).then(blocks => {
         if (blockChars(blocks) < 40) throw new Error("Die PDF enthält keinen lesbaren Text (vermutlich eingescannt). Bitte den Text über „Bearbeiten“ erfassen.");
         return regelStore(blocks, f.name, regelExtract.pages);
-      }).then(() => { regelMsg(`Regelwerk aus „${f.name}“ übernommen.`); regelShow(true); })
+      }).then(() => { regelMsg(`Regelwerk aus „${f.name}“ übernommen.`); regelShow(true); notify({ kat: "regeln", an: "alle", tab: "regel", titel: "Regelwerk geändert", text: "Das Regelwerk wurde aktualisiert." }); })
         .catch(err => regelMsg(err.message || String(err), true));
     };
     rd.onerror = () => regelMsg("Die Datei konnte nicht gelesen werden.", true);
@@ -2692,7 +2713,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     if (!blockChars(blocks)) { $("regelEdMsg").textContent = "Der Text ist leer."; return; }
     $("regelEdSave").disabled = true; $("regelEdMsg").textContent = "Speichere …";
     regelStore(blocks, (regelData && regelData.name) || "Regelwerk", 0)
-      .then(() => { regelEdClose(); regelMsg("Regelwerk gespeichert."); regelShow(true); })
+      .then(() => { regelEdClose(); regelMsg("Regelwerk gespeichert."); regelShow(true); notify({ kat: "regeln", an: "alle", tab: "regel", titel: "Regelwerk geändert", text: "Das Regelwerk wurde aktualisiert." }); })
       .catch(e => { $("regelEdMsg").textContent = "Speichern fehlgeschlagen: " + (e.message || e.code); })
       .finally(() => { $("regelEdSave").disabled = false; });
   };
@@ -2798,6 +2819,10 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
 
   function planVote(it, data) {
     const ref = db.collection("planung").doc(it.id).collection("stimmen").doc(ME().uid);
+    if (data && it.von && it.von !== ME().uid) {
+      const was = data.antwort ? { ja: "sagt zu", vielleicht: "kommt vielleicht", nein: "sagt ab" }[data.antwort] : "hat abgestimmt";
+      notify({ kat: "antworten", an: "uid:" + it.von, tab: "plan", titel: it.titel || "Planung", text: `${myName()} ${was}.` });
+    }
     (data ? ref.set({ ...data, name: myName(), zeit: Date.now() }) : ref.delete()).catch(e => planMsg("Stimme konnte nicht gespeichert werden: " + (e.message || e.code), true));
   }
   const ANS = [["ja", "Dabei"], ["vielleicht", "Vielleicht"], ["nein", "Nicht dabei"]];
@@ -2854,7 +2879,8 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
         if (!await window.appConfirm({ title: "Als Termin übernehmen?", text: `„${label(o)}“ wird als Termin angelegt und die Abstimmung beendet.`, ok: "Übernehmen" })) return;
         db.collection("planung").add({ typ: "termin", titel: it.titel, text: it.text || "", datum: o.datum || todayIso(), zeit: o.zeit || "", ort: o.text || "", von: ME().uid, vonName: myName(), erstellt: Date.now() })
           .then(() => db.collection("planung").doc(it.id).update({ geschlossen: true, geaendert: Date.now() }))
-          .then(() => planMsg("Termin angelegt.")).catch(e => planMsg("Fehler: " + (e.message || e.code), true));
+          .then(() => { planMsg("Termin angelegt."); notify({ kat: "planung", an: "alle", tab: "plan", titel: `Termin steht fest – ${it.titel || "Termin"}`, text: label(o) }); })
+          .catch(e => planMsg("Fehler: " + (e.message || e.code), true));
       };
       foot.append(b);
     }
@@ -3041,7 +3067,13 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
       $("planEdSave").disabled = true;
       const p = it.id ? db.collection("planung").doc(it.id).update({ ...data, geaendert: Date.now() })
                       : db.collection("planung").add({ ...data, von: ME().uid, vonName: myName(), erstellt: Date.now(), geschlossen: false });
-      p.then(() => { planEdClose(); planMsg(it.id ? "Gespeichert." : "Angelegt."); })
+      p.then(() => {
+        planEdClose(); planMsg(it.id ? "Gespeichert." : "Angelegt.");
+        const art = { termin: "Termin", umfrage: data.art === "termin" ? "Terminfindung" : "Abstimmung", notiz: "Notiz" }[typ];
+        const plain = t => String(t || "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1");   // [Text](Link) → Text
+        const info = typ === "termin" ? `${wdate(data.datum)}${data.zeit ? ", " + data.zeit + " Uhr" : ""}${data.ort ? " · " + plain(data.ort) : ""}` : plain(data.text).slice(0, 120);
+        notify({ kat: "planung", an: "alle", tab: "plan", titel: `${it.id ? art + " geändert" : "Neu: " + art} – ${data.titel || art}`, text: info || `von ${myName()}` });
+      })
         .catch(e => msg("Speichern fehlgeschlagen: " + (e.message || e.code)))
         .finally(() => { $("planEdSave").disabled = false; });
     };
@@ -3058,6 +3090,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
   const PANE = { stand: "secStand", book: "secBook", stat: "secStat", regel: "secRegel", plan: "secPlan", set: "settings" };
   let tab = "stand", lastPeriod = "all", prevTab = "stand";
   try { const t = localStorage.getItem("ksv-tab"); if (t && PANE[t]) tab = t; } catch {}
+  try { const q = new URLSearchParams(location.search).get("tab"); if (q && PANE[q]) tab = q; } catch {}
   const hasSeasons = () => seasonsSorted().length > 0;
   function showTab(t, animate = true) {
     if (!PANE[t]) t = "stand";
