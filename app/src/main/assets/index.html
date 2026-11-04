@@ -680,6 +680,21 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
 .pc-c .rx{margin-top:4px}
 .pc-c .rx-chip{font-size:12px;padding:0 7px 0 5px} .pc-c .rx-e{font-size:13px}
 .pc-c .rx-add{width:26px;height:22px} .pc-c .rx-add svg{width:15px;height:15px}
+/* ---------- Alle Emojis ---------- */
+.rx-pick{flex-wrap:nowrap}
+.rx-pick button{flex:1 1 0;min-width:0;width:auto;max-width:42px}
+.rx-pick .rx-more{font-size:20px;font-weight:700;color:var(--gold-ink);border:1px dashed var(--gold)}
+.emo-sheet{position:fixed;inset:0;z-index:95;background:rgba(10,10,10,.55);display:flex;align-items:flex-end;justify-content:center}
+.emo-box{width:100%;max-width:560px;height:min(70vh,520px);background:var(--bg);color:var(--ink);border-radius:16px 16px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.35);display:flex;flex-direction:column;animation:tabIn .15s ease-out;padding-bottom:env(safe-area-inset-bottom,0px)}
+.emo-head{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line)}
+.emo-tabs{flex:1;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.emo-tab{flex:none;width:38px;height:36px;border:0;background:none;font-size:20px;border-radius:8px;cursor:pointer;opacity:.6}
+.emo-tab.on{opacity:1;background:color-mix(in srgb,var(--gold) 22%,transparent)}
+.emo-grid{flex:1;overflow-y:auto;padding:4px 10px 12px;overscroll-behavior:contain}
+.emo-cat{position:sticky;top:0;background:var(--bg);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:8px 2px 4px;z-index:1}
+.emo-cells{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr))}
+.emo-cells button{border:0;background:none;font-size:25px;height:44px;border-radius:8px;cursor:pointer;padding:0}
+.emo-cells button:hover,.emo-cells button.on{background:color-mix(in srgb,var(--gold) 22%,transparent)}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -2988,6 +3003,39 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
   // Gespeichert im Feld „reaktionen“: { <Konto>: { e: ["👍", …], n: "Name" } } – jedes Konto ändert nur seinen Eintrag.
   const EMOJIS = ["👍", "❤️", "😂", "😮", "🎉", "🍺", "🃏", "👎"];
   let planPick = null;   // offene Emoji-Auswahl (bleibt beim Neuzeichnen offen)
+  // Alle Emojis nach Kategorien (aus den Unicode-Daten erzeugt, ohne ganz neue Emojis, die ältere Handys nicht kennen)
+  const EMOJI_ALL = [["Smileys","😀",["😀","😁","😂","😃","😄","😅","😆","😇","😈","😉","😊","😋","😌","😍","😎","😏","😐","😑","😒","😓","😔","😕","😖","😗","😘","😙","😚","😛","😜","😝","😞","😟","😠","😡","😢","😣","😤","😥","😦","😧","😨","😩","😪","😫","😬","😭","😮","😯","😰","😱","😲","😳","😴","😵","😶","😷","🙁","🙂","🙃","🙄","🤐","🤑","🤒","🤓","🤔","🤕","🤗","🤠","🤡","🤢","🤣","🤤","🤥","🤦","🤧","🤨","🤩","🤪","🤫","🤬","🤭","🤮","🤯","🥰","🥱","🥳","🥴","🥵","🥶","🥺","🧐","😸","😹","😺","😻","😼","😽","😾","😿","🙀","🙈","🙉","🙊","👻","💀","👽","🤖","💩","👿","👹","👺"]],["Gesten","👍",["👊","👋","👌","👍","👎","👏","👐","👆","👇","👈","👉","✊️","✋️","✌️","☝️","🖖","🖕","🤘","🤙","🤚","🤛","🤜","🤝","🤞","🤟","🙌","🙏","🙋","🙅","🙆","🙇","🤷","🤦","💪","🦾","👀","👂","👃","👄","👅","💋","🤳","💃","🕺","👯","👪","👫","👬","👭","👴","👵","👶","👦","👧","👨","👩","🧑","🧓","👮","👷","💂","🤵","👰","🤶","🎅","🧙","🧚","🧛","🧜","🧝","🧞","🧟"]],["Tiere & Natur","🐶",["🐀","🐁","🐂","🐃","🐄","🐅","🐆","🐇","🐈","🐉","🐊","🐋","🐌","🐍","🐎","🐏","🐐","🐑","🐒","🐓","🐔","🐕","🐖","🐗","🐘","🐙","🐚","🐛","🐜","🐝","🐞","🐟","🐠","🐡","🐢","🐣","🐤","🐥","🐦","🐧","🐨","🐩","🐪","🐫","🐬","🐭","🐮","🐯","🐰","🐱","🐲","🐳","🐴","🐵","🐶","🐷","🐸","🐹","🐺","🐻","🐼","🐽","🐾","🦀","🦁","🦂","🦃","🦄","🦅","🦆","🦇","🦈","🦉","🦊","🦋","🦌","🦍","🦎","🦏","🦐","🦑","🦒","🦓","🦔","🦕","🦖","🦗","🦘","🦙","🦚","🦛","🦜","🦝","🦞","🦟","🦠","🦡","🦢","🦥","🦦","🦧","🦨","🦩","🦪","🦮","🌰","🌱","🌲","🌳","🌴","🌵","🌷","🌸","🌹","🌺","🌻","🌼","🌽","🌾","🌿","🍀","🍁","🍂","🍃","🍄","💐","💮","🥀","🌑","🌒","🌓","🌔","🌕","🌖","🌗","🌘","🌙","🌚","🌛","🌜","🌝","🌞","🌟","🌠","☀️","☁️","⛅️","⚡️","❄️","⛄️","🌈","☔️","🌊"]],["Essen & Trinken","🍺",["🍅","🍆","🍇","🍈","🍉","🍊","🍋","🍌","🍍","🍎","🍏","🍐","🍑","🍒","🍓","🍔","🍕","🍖","🍗","🍘","🍙","🍚","🍛","🍜","🍝","🍞","🍟","🍠","🍡","🍢","🍣","🍤","🍥","🍦","🍧","🍨","🍩","🍪","🍫","🍬","🍭","🍮","🍯","🍰","🍱","🍲","🍳","🍴","🍵","🍶","🍷","🍸","🍹","🍺","🍻","🍼","🍾","🍿","🥐","🥑","🥒","🥓","🥔","🥕","🥖","🥗","🥘","🥙","🥚","🥛","🥜","🥝","🥞","🥟","🥠","🥡","🥢","🥣","🥤","🥥","🥦","🥧","🥨","🥩","🥪","🥫","🥬","🥭","🥮","🥯","🧀","🧁","🧂","🧃","🧄","🧅","🧆","🧇","🧈","🧉","🧊","🌭","🌮","🌯","☕️"]],["Aktivitäten","🎉",["🎀","🎁","🎂","🎃","🎄","🎅","🎆","🎇","🎈","🎉","🎊","🎋","🎌","🎍","🎎","🎏","🎐","🎑","🎒","🎓","🃏","♠️","♣️","♥️","♦️","🎲","🎯","🎳","🎰","🎮","♟️","🧩","🏆","🥇","🥈","🥉","🏅","⚽️","⚾️","🏀","🏁","🏂","🏃","🏄","🏇","🏈","🏉","🏊","🏏","🏐","🏑","🏒","🏓","🥊","🥋","🥌","🥍","🥎","🥏","🎾","🎿","🎽","🛷","🎠","🎡","🎢","🎣","🎤","🎥","🎦","🎧","🎨","🎩","🎪","🎫","🎬","🎭","🎱","🎴","🎵","🎶","🎷","🎸","🎹","🎺","🎻","🎼","🥁"]],["Reisen & Orte","🚗",["🚀","🚁","🚂","🚃","🚄","🚅","🚆","🚇","🚈","🚉","🚊","🚋","🚌","🚍","🚎","🚏","🚐","🚑","🚒","🚓","🚔","🚕","🚖","🚗","🚘","🚙","🚚","🚛","🚜","🚝","🚞","🚟","🚠","🚡","🚢","🚣","🚤","🚥","🚦","🚧","🚨","🚩","🚪","🚫","🚬","🚭","🚮","🚯","🚰","🚱","🚲","🚳","🚴","🚵","🚶","🚷","🚸","🚹","🚺","🚻","🚼","🚽","🚾","🚿","🛀","🛁","🛂","🛃","🛄","🛅","🏠","🏡","🏢","🏣","🏤","🏥","🏦","🏧","🏨","🏩","🏪","🏫","🏬","🏭","🏮","🏯","🏰","⛪️","⛲️","⛺️","✈️","⛵️","⚓️","⛽️","🗻","🗼","🗽","🗾","🗿","🌍","🌎","🌏"]],["Objekte","💡",["💡","💰","💱","💲","💳","💴","💵","💶","💷","💸","💻","💼","💽","💾","💿","📀","📁","📂","📃","📄","📅","📆","📇","📈","📉","📊","📋","📌","📍","📎","📏","📐","📑","📒","📓","📔","📕","📖","📗","📘","📙","📚","📝","📞","📟","📠","📡","📢","📣","📤","📥","📦","📧","📨","📩","📪","📫","📬","📭","📮","📯","📰","📱","📲","📳","📴","📵","📶","📷","📸","📹","📺","📻","📼","🔋","🔌","🔍","🔎","🔏","🔐","🔑","🔒","🔓","🔔","🔕","🔖","🔗","🔘","🔙","🔚","🔛","🔜","🔝","🔞","🔟","🔠","🔡","🔢","🔣","🔤","🔥","🔦","🔧","🔨","🔩","🔪","🔫","🔬","🔭","🔮","⌚️","⌛️","⏰️","⏳️","☎️","✉️","✏️","✂️","🎁","🎈","🎉","🎊","🧸","🧻","🧼","🧽","🧾","🧿","💎","👑","👒","👓","👔","👕","👖","👗","👘","👙","👚","👛","👜","👝","👞","👟","👠","👡","👢"]],["Symbole","❤️",["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❣️","💓","💕","💖","💗","💘","💝","💞","💟","💯","🔥","✨️","⭐️","🌟","💥","💢","💦","💨","💫","💬","💭","💤","✅️","☑️","✔️","❌️","❎️","➕️","➖️","➗️","✖️","❓️","❔️","❕️","❗️","‼️","⁉️","⚠️","🚫","⛔️","🚭","🔞","♻️","☢️","☣️","⚜️","🔱","⭕️","🔴","🟠","🟡","🟢","🔵","🟣","⚫️","⚪️","🟤","🔶","🔷","🔸","🔹","🔺","🔻","💠","🔘","🔳","🔲","➡️","⬅️","⬆️","⬇️","↗️","↘️","↙️","↖️","↕️","↔️","↩️","↪️","🔄","🔃","🔀","🔁","🔂","▶️","⏩️","⏪️","◀️","🔼","🔽","⏸️","⏹️","⏺️","🎦","🔅","🔆","📶","📳","📴","♀️","♂️","♾️","💲","💱","©️","®️","™️","🔟","🔠","🔡","🔢","🔣","🔤","🅰","🅱","🅾","🅿","🆎","🆑","🆒","🆓","ℹ️","🆔","Ⓜ️","🆕","🆖","🆗","🆘","🆙","🆚","🈁","🈂","🈷","🈶","🈯","🉐","🈹","🈚","🈲","🉑","🈸","🈴","🈳","㊗️","㊙️","🈺","🈵"]]];
+  let emoClose = null;
+  function openEmojiSheet(mine, onPick) {
+    if (emoClose) emoClose();
+    let recent = []; try { recent = JSON.parse(localStorage.getItem("ksv-emoji-recent") || "[]"); } catch {}
+    const cats = (recent.length ? [["Zuletzt benutzt", "🕘", recent]] : []).concat(EMOJI_ALL);
+    const ov = el("div", "emo-sheet"), box = el("div", "emo-box"); ov.setAttribute("role", "dialog"); ov.setAttribute("aria-modal", "true"); ov.setAttribute("aria-label", "Emoji auswählen");
+    const head = el("div", "emo-head"), tabs = el("div", "emo-tabs"), x = el("button", "iconbtn", "Schließen"); x.type = "button";
+    const grid = el("div", "emo-grid");
+    head.append(tabs, x); box.append(head, grid); ov.append(box);
+    const close = () => { ov.remove(); emoClose = null; document.removeEventListener("keydown", key, true); };
+    const key = e => { if (e.key === "Escape") { e.stopPropagation(); close(); } };
+    const pick = e => {
+      try { localStorage.setItem("ksv-emoji-recent", JSON.stringify([e, ...recent.filter(r => r !== e)].slice(0, 24))); } catch {}
+      close(); onPick(e);
+    };
+    const secs = [];
+    cats.forEach(([name, icon, list], i) => {
+      const t = el("button", "emo-tab", icon); t.type = "button"; t.title = name; t.setAttribute("aria-label", name);
+      t.onclick = () => secs[i].scrollIntoView({ block: "start" });
+      tabs.append(t);
+      const sec = el("div", "emo-sec"); sec.append(el("div", "emo-cat", name));
+      const g = el("div", "emo-cells");
+      list.forEach(e => { const b = el("button", mine.includes(e) ? "on" : "", e); b.type = "button"; b.onclick = () => pick(e); g.append(b); });
+      sec.append(g); grid.append(sec); secs.push(sec);
+    });
+    // aktive Kategorie beim Scrollen markieren
+    grid.onscroll = () => { let k = 0; secs.forEach((s, i) => { if (s.offsetTop - grid.offsetTop <= grid.scrollTop + 8) k = i; }); tabs.querySelectorAll(".emo-tab").forEach((t, i) => t.classList.toggle("on", i === k)); };
+    x.onclick = close; ov.onclick = e => { if (e.target === ov) close(); };
+    document.addEventListener("keydown", key, true);
+    document.body.append(ov); emoClose = close; grid.onscroll();
+  }
   function saveReaction(ref, obj, val) {
     const uid = ME().uid;
     return window.KSV_CLOUD_MODE ? ref.update({ ["reaktionen." + uid]: val }) : ref.update({ reaktionen: { ...(obj.reaktionen || {}), [uid]: val } });
@@ -3002,7 +3050,9 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
           notify({ kat: "antworten", an: "uid:" + ctx.an, tab: "plan", titel: ctx.titel, text: `${myName()} reagiert mit ${e}${ctx.was ? " auf " + ctx.was : ""}` });
       }).catch(err => planMsg("Reaktion nicht gespeichert: " + (err.message || err.code), true));
     };
-    EMOJIS.forEach(e => {
+    const used = [...EMOJIS];   // feste Reihenfolge, danach weitere Emojis in der Reihenfolge ihres Auftretens
+    Object.values(all).forEach(v => (v?.e || []).forEach(e => { if (!used.includes(e)) used.push(e); }));
+    used.forEach(e => {
       const who = Object.values(all).filter(v => (v?.e || []).includes(e)).map(v => v.n || "?");
       if (!who.length) return;
       const b = el("button", "rx-chip" + (mine.includes(e) ? " on" : "")); b.type = "button";
@@ -3017,6 +3067,9 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     if (planPick === key) {
       const pk = el("div", "rx-pick"); pk.setAttribute("role", "group"); pk.setAttribute("aria-label", "Emoji auswählen");
       EMOJIS.forEach(e => { const b = el("button", mine.includes(e) ? "on" : "", e); b.type = "button"; b.setAttribute("aria-pressed", String(mine.includes(e))); b.onclick = () => toggle(e); pk.append(b); });
+      const more = el("button", "rx-more", "+"); more.type = "button"; more.setAttribute("aria-label", "Alle Emojis anzeigen"); more.title = "Alle Emojis";
+      more.onclick = () => openEmojiSheet(mine, e => toggle(e));
+      pk.append(more);
       box.append(pk);
     }
     return box;
@@ -3252,6 +3305,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
   $("cmpY").onclick = () => { season = "cmp:y"; render(); };
   window.__ksvGoTab = goTab;
   window.__ksvTabBack = () => {
+    if (emoClose) { emoClose(); return true; }
     if (!$("acctMenu").hidden) { menuClose(); return true; }
     if (!$("planEd").hidden) { planEdClose(); return true; }
     if (!$("regelEd").hidden) { regelEdClose(); return true; }
