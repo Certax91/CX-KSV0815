@@ -650,6 +650,22 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
 .app-dlg-act .btn{padding:9px 16px}
 .btn.btn-danger{background:var(--danger);border-color:var(--danger);color:#fff}
 .app-version{margin-top:6px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
+/* ---------- Kommentare in der Planung ---------- */
+.pc-info{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pc-cbtn{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--bg);color:var(--muted);border-radius:999px;padding:3px 9px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.pc-cbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linejoin:round}
+.pc-cbtn.on,.pc-cbtn:hover{color:var(--gold-ink);border-color:var(--gold)}
+.pc-thread{display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--line);padding-top:10px}
+.pc-c{background:var(--surface);border-radius:10px 10px 10px 2px;padding:7px 10px;max-width:92%;align-self:flex-start}
+.pc-c.mine{background:color-mix(in srgb,var(--gold) 16%,var(--bg));border-radius:10px 10px 2px 10px;align-self:flex-end}
+.pc-ch{display:flex;gap:8px;align-items:baseline;font-size:12px}
+.pc-ch b{font-size:13px} .pc-ch span{color:var(--muted)}
+.pc-cdel{margin-left:auto;border:0;background:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px}
+.pc-ct{font-size:14px;line-height:1.45;white-space:pre-wrap;word-break:break-word;margin-top:2px}
+.pc-cform{display:flex;gap:6px;align-items:flex-end}
+.pc-cform textarea{flex:1;min-width:0;resize:none;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:18px;padding:8px 12px;font:inherit;font-size:14px;line-height:1.4;max-height:140px}
+.pc-send{width:38px;height:38px;border-radius:50%;padding:0;display:grid;place-items:center;flex:none}
+.pc-send svg{width:18px;height:18px;fill:currentColor}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -2796,6 +2812,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
   const stamp = ms => { if (!ms) return ""; const d = new Date(ms); return fmtDate(d.toISOString().slice(0, 10)); };
   const canEditItem = it => ME().admin || it.von === ME().uid;
   let planItems = [], planVotes = {}, planSubs = {}, planStarted = false, planFilter = "alle";
+  let planComments = {}, planCSubs = {}, planOpenC = new Set(), planDrafts = {};
   try { planFilter = localStorage.getItem("ksv-planfilter") || "alle"; } catch {}
   const planMsg = (t, err) => { $("planMsg").textContent = t || ""; $("planMsg").classList.toggle("err", !!err); };
   function planStart() {
@@ -2803,6 +2820,11 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     db.collection("planung").onSnapshot(s => {
       planItems = s.docs.map(d => ({ id: d.id, ...d.data() }));
       planItems.forEach(it => {
+        if (!planCSubs[it.id])
+          planCSubs[it.id] = db.collection("planung").doc(it.id).collection("kommentare").onSnapshot(v => {
+            planComments[it.id] = v.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.zeit || 0) - (b.zeit || 0));
+            if (tab === "plan") planRender();
+          }, () => {});
         if ((it.typ === "termin" || it.typ === "umfrage") && !planSubs[it.id])
           planSubs[it.id] = db.collection("planung").doc(it.id).collection("stimmen").onSnapshot(v => { planVotes[it.id] = v.docs.map(d => ({ uid: d.id, ...d.data() })); if (tab === "plan") planRender(); }, () => {});
       });
@@ -2968,8 +2990,15 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     if (it.typ === "termin") c.append(planRsvp(it));
     if (it.typ === "umfrage") c.append(planPoll(it));
     if (it.typ === "termin" && it.datum) c.append(planCalRow(it));
-    const foot = el("div", "pc-foot");
-    foot.append(el("span", "msg", `${it.vonName || "?"} · ${stamp(it.erstellt)}${it.geaendert ? " (geändert)" : ""}`));
+    const foot = el("div", "pc-foot"), info = el("div", "pc-info");
+    info.append(el("span", "msg", `${it.vonName || "?"} · ${stamp(it.erstellt)}${it.geaendert ? " (geändert)" : ""}`));
+    const nC = (planComments[it.id] || []).length, open = planOpenC.has(it.id);
+    const cb = el("button", "pc-cbtn" + (open ? " on" : "")); cb.type = "button";
+    cb.setAttribute("aria-expanded", String(open)); cb.setAttribute("aria-label", `Kommentare (${nC})`);
+    cb.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H10l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/></svg>';
+    if (nC) cb.append(el("span", null, String(nC)));
+    cb.onclick = () => { open ? planOpenC.delete(it.id) : planOpenC.add(it.id); planRender(); if (!open) setTimeout(() => document.getElementById("pcIn-" + it.id)?.focus(), 0); };
+    info.append(cb); foot.append(info);
     if (canEditItem(it)) {
       const act = el("div", "pc-act");
       if (it.typ === "umfrage") { const b = el("button", "iconbtn", it.geschlossen ? "Wieder öffnen" : "Beenden"); b.type = "button"; b.onclick = () => db.collection("planung").doc(it.id).update({ geschlossen: !it.geschlossen, geaendert: Date.now() }).catch(e => planMsg(e.message, true)); act.append(b); }
@@ -2978,16 +3007,60 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
       act.append(e1, e2); foot.append(act);
     }
     c.append(foot);
+    if (open) c.append(planThread(it));
     return c;
+  }
+  // Kommentar-Verlauf mit Eingabe
+  const cTime = ms => { const d = new Date(ms || 0); return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}. ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+  function planThread(it) {
+    const box = el("div", "pc-thread"), list = planComments[it.id] || [];
+    if (!list.length) box.append(el("div", "msg", "Noch keine Kommentare."));
+    list.forEach(k => {
+      const mine = k.von === ME().uid, row = el("div", "pc-c" + (mine ? " mine" : ""));
+      const hd = el("div", "pc-ch"); hd.append(el("b", null, k.vonName || "?"), el("span", null, cTime(k.zeit)));
+      if (mine || ME().admin) {
+        const x = el("button", "pc-cdel", "✕"); x.type = "button"; x.setAttribute("aria-label", "Kommentar löschen");
+        x.onclick = async () => { if (await window.appConfirm({ title: "Kommentar löschen?", text: String(k.text || "").slice(0, 120), ok: "Löschen", danger: true }))
+          db.collection("planung").doc(it.id).collection("kommentare").doc(k.id).delete().catch(e => planMsg("Löschen fehlgeschlagen: " + (e.message || e.code), true)); };
+        hd.append(x);
+      }
+      const tx = el("div", "pc-ct"); tx.append(linkify(String(k.text || "")));
+      row.append(hd, tx); box.append(row);
+    });
+    const form = el("div", "pc-cform"), ta = el("textarea"); ta.id = "pcIn-" + it.id; ta.rows = 1; ta.placeholder = "Kommentar schreiben …";
+    ta.setAttribute("aria-label", "Kommentar schreiben"); ta.value = planDrafts[it.id] || "";
+    const grow = () => { ta.style.height = "auto"; ta.style.height = Math.min(140, ta.scrollHeight) + "px"; };
+    ta.oninput = () => { planDrafts[it.id] = ta.value; grow(); }; setTimeout(grow, 0);
+    const send = el("button", "btn pc-send"); send.type = "button"; send.setAttribute("aria-label", "Kommentar senden");
+    send.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 16-2-7-8-1z"/></svg>';
+    send.onclick = () => {
+      const text = ta.value.trim(); if (!text || !db) return;
+      send.disabled = true;
+      db.collection("planung").doc(it.id).collection("kommentare").add({ text: text.slice(0, 2000), von: ME().uid, vonName: myName(), zeit: Date.now() })
+        .then(() => {
+          planDrafts[it.id] = "";
+          // Nachricht an den Ersteller und alle, die schon kommentiert haben
+          const an = new Set([it.von, ...list.map(k => k.von)].filter(u => u && u !== ME().uid));
+          an.forEach(u => notify({ kat: "antworten", an: "uid:" + u, tab: "plan", titel: `Kommentar: ${it.titel || "Planung"}`, text: `${myName()}: ${text.slice(0, 140)}` }));
+          planRender(); setTimeout(() => document.getElementById("pcIn-" + it.id)?.focus(), 0);
+        })
+        .catch(e => { send.disabled = false; planMsg("Kommentar konnte nicht gespeichert werden: " + (e.message || e.code), true); });
+    };
+    form.append(ta, send); box.append(form);
+    return box;
   }
   async function planDelete(it) {
     if (!await window.appConfirm({ title: "Eintrag löschen?", text: `„${it.titel || "Eintrag"}“ wird für alle gelöscht.`, ok: "Löschen", danger: true })) return;
     const ref = db.collection("planung").doc(it.id);
-    ref.collection("stimmen").get().then(s => Promise.all(s.docs.map(d => (d.ref || ref.collection("stimmen").doc(d.id)).delete().catch(() => {})))).catch(() => {})
+    const clear = sub => ref.collection(sub).get().then(s => Promise.all(s.docs.map(d => (d.ref || ref.collection(sub).doc(d.id)).delete().catch(() => {})))).catch(() => {});
+    Promise.all([clear("stimmen"), clear("kommentare")])
       .then(() => ref.delete()).then(() => planMsg("Gelöscht.")).catch(e => planMsg("Löschen fehlgeschlagen: " + (e.message || e.code), true));
   }
   function planRender() {
-    const list = $("planList"); if (!list) return; list.textContent = "";
+    const list = $("planList"); if (!list) return;
+    const act = document.activeElement, focusId = act && act.id && act.id.startsWith("pcIn-") ? act.id : null, caret = focusId ? act.selectionStart : 0;
+    list.textContent = "";
+    setTimeout(() => { if (focusId) { const t = document.getElementById(focusId); if (t) { t.focus(); try { t.setSelectionRange(caret, caret); } catch {} } } }, 0);
     $("planFilter").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.f === planFilter)));
     const want = { alle: null, termine: "termin", umfragen: "umfrage", notizen: "notiz" }[planFilter];
     const items = planItems.filter(it => !want || it.typ === want), today = todayIso();

@@ -38,6 +38,13 @@ service cloud.firestore {
       allow update: if darfLesen() && (resource.data.von == request.auth.uid || istVerwalter())
         && request.resource.data.von == resource.data.von;
       allow delete: if darfLesen() && (resource.data.von == request.auth.uid || istVerwalter());
+      // Kommentare: alle Mitglieder schreiben; löschen dürfen Verfasser, Ersteller des Eintrags und Verwalter
+      match /kommentare/{kid} {
+        allow read: if darfLesen();
+        allow create: if darfLesen() && request.resource.data.von == request.auth.uid;
+        allow delete: if darfLesen() && (resource.data.von == request.auth.uid || istVerwalter()
+          || get(/databases/$(database)/documents/planung/$(id)).data.von == request.auth.uid);
+      }
       match /stimmen/{uid} {
         allow read: if darfLesen();
         allow create, update: if darfLesen() && request.auth.uid == uid;
