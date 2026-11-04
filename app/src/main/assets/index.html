@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><title>KSV 08/15</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="KSV 08/15"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#111111"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body><script src="seed.js"></script><script src="firebase-config.js"></script><script src="shim.js"></script><script src="cloud.js"></script>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><title>KSV 08/15</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/icon-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="KSV 08/15"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="theme-color" content="#111111"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body><script src="seed.js"></script><script src="version.js"></script><script src="firebase-config.js"></script><script src="shim.js"></script><script src="cloud.js"></script>
 <title>KSV 08/15 Spielbuch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Graduate&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
@@ -649,6 +649,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
 .app-dlg-act{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:4px}
 .app-dlg-act .btn{padding:9px 16px}
 .btn.btn-danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.app-version{margin-top:6px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -914,6 +915,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
         <span class="msg" id="nsPreview"></span>
       </div>
     </div>
+    <div class="app-version" id="appVersion"></div>
   </section>
 </div>
 
@@ -1512,6 +1514,11 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     if (v && !/^(https?:\/\/)?([\w-]+\.)*paypal\.(me|com)\b/i.test(v)) { $("paypalMsg").textContent = "Bitte einen PayPal-Link eintragen (paypal.me/… oder paypal.com/pools/…)."; return; }
     cfg.paypal = v; saveCfg(); $("paypalMsg").textContent = v ? "Gespeichert." : "Entfernt.";
   };
+  // Version der App (beim Build aus der Release-Nummer erzeugt, siehe version.js)
+  (() => {
+    const v = window.KSV_VERSION || "lokal", d = window.KSV_BUILD ? fmtDate(window.KSV_BUILD) : "";
+    $("appVersion").textContent = `KSV 08/15 Spielbuch · Version ${v}${d ? " vom " + d : ""} · ${window.AndroidApp ? "Android-App" : "Web-Version"}`;
+  })();
   function renderSettings() {
     if (document.activeElement !== $("paypalLink")) $("paypalLink").value = cfg.paypal || "";
     $("paypalLink").disabled = !canWrite;
@@ -2540,7 +2547,8 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
         if (par) { h.append(el("span", "rd-par", par[0].replace(/\s+/, " "))); fill(h, [{ t: text.slice(par[0].length).trim(), b: false }]); }
         else fill(h, b.segs);
         doc.append(h);
-        const c = el("button", "chip", par ? par[0].replace(/\s+/, " ") : (text.length > 22 ? text.slice(0, 21) + "…" : text)); c.type = "button"; c.title = text;
+        const short = t => t.length > 30 ? t.slice(0, 29).trimEnd() + "…" : t;
+        const c = el("button", "chip", short(par ? par[0].replace(/\s+/, " ") + " " + text.slice(par[0].length).trim() : text)); c.type = "button"; c.title = text;
         c.onclick = () => { h.scrollIntoView({ behavior: "smooth", block: "start" }); };
         toc.append(c);
         continue;
