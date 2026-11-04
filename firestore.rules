@@ -14,6 +14,11 @@ service cloud.firestore {
     function istVerwalter() { return verwalterMail() || rolle() == 'admin'; }
     function profil() { return get(/databases/$(database)/documents/nutzer/$(request.auth.uid)).data; }
     function istKassierer() { return hatProfil() && profil().get('kassierer', false) == true; }
+    // Emoji-Reaktion: nur das Feld „reaktionen“ und darin nur der eigene Eintrag ändert sich
+    function nurReaktion() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reaktionen'])
+        && request.resource.data.reaktionen.diff(resource.data.get('reaktionen', {})).affectedKeys().hasOnly([request.auth.uid]);
+    }
     function nurZahlstatus() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pay']); }
     function eigeneZahlungGemeldet() {
       let s = hatProfil() ? profil().get('spielerId', null) : null;
@@ -37,11 +42,13 @@ service cloud.firestore {
       allow create: if darfLesen() && request.resource.data.von == request.auth.uid;
       allow update: if darfLesen() && (resource.data.von == request.auth.uid || istVerwalter())
         && request.resource.data.von == resource.data.von;
+      allow update: if darfLesen() && nurReaktion();
       allow delete: if darfLesen() && (resource.data.von == request.auth.uid || istVerwalter());
       // Kommentare: alle Mitglieder schreiben; löschen dürfen Verfasser, Ersteller des Eintrags und Verwalter
       match /kommentare/{kid} {
         allow read: if darfLesen();
         allow create: if darfLesen() && request.resource.data.von == request.auth.uid;
+        allow update: if darfLesen() && nurReaktion();
         allow delete: if darfLesen() && (resource.data.von == request.auth.uid || istVerwalter()
           || get(/databases/$(database)/documents/planung/$(id)).data.von == request.auth.uid);
       }

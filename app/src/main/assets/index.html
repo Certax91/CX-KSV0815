@@ -666,6 +666,20 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
 .pc-cform textarea{flex:1;min-width:0;resize:none;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:18px;padding:8px 12px;font:inherit;font-size:14px;line-height:1.4;max-height:140px}
 .pc-send{width:38px;height:38px;border-radius:50%;padding:0;display:grid;place-items:center;flex:none}
 .pc-send svg{width:18px;height:18px;fill:currentColor}
+/* ---------- Emoji-Reaktionen ---------- */
+.rx{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.rx-chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:1px 8px 1px 6px;font:inherit;font-size:13px;cursor:pointer;line-height:1.6}
+.rx-chip.on{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 18%,var(--bg))}
+.rx-e{font-size:15px} .rx-n{font-family:var(--f-num);font-weight:700;font-size:12px}
+.rx-add{width:30px;height:26px;border:1px dashed var(--line);background:transparent;color:var(--muted);border-radius:999px;display:grid;place-items:center;cursor:pointer;padding:0}
+.rx-add svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+.rx-add.on,.rx-add:hover{color:var(--gold-ink);border-color:var(--gold);border-style:solid}
+.rx-pick{flex-basis:100%;display:flex;flex-wrap:wrap;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:5px;animation:tabIn .12s ease-out}
+.rx-pick button{border:0;background:transparent;font-size:21px;width:38px;height:36px;border-radius:8px;cursor:pointer;padding:0}
+.rx-pick button:hover,.rx-pick button.on{background:color-mix(in srgb,var(--gold) 22%,transparent)}
+.pc-c .rx{margin-top:4px}
+.pc-c .rx-chip{font-size:12px;padding:0 7px 0 5px} .pc-c .rx-e{font-size:13px}
+.pc-c .rx-add{width:26px;height:22px} .pc-c .rx-add svg{width:15px;height:15px}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -2970,6 +2984,44 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     if (last < text.length) f.append(text.slice(last));
     return f;
   }
+  // ---------- Emoji-Reaktionen auf Einträge und Kommentare ----------
+  // Gespeichert im Feld „reaktionen“: { <Konto>: { e: ["👍", …], n: "Name" } } – jedes Konto ändert nur seinen Eintrag.
+  const EMOJIS = ["👍", "❤️", "😂", "😮", "🎉", "🍺", "🃏", "👎"];
+  let planPick = null;   // offene Emoji-Auswahl (bleibt beim Neuzeichnen offen)
+  function saveReaction(ref, obj, val) {
+    const uid = ME().uid;
+    return window.KSV_CLOUD_MODE ? ref.update({ ["reaktionen." + uid]: val }) : ref.update({ reaktionen: { ...(obj.reaktionen || {}), [uid]: val } });
+  }
+  function reactBar(key, obj, ref, ctx) {
+    const box = el("div", "rx"), all = obj.reaktionen || {}, uid = ME().uid, mine = all[uid]?.e || [];
+    const toggle = e => {
+      const next = mine.includes(e) ? mine.filter(x => x !== e) : [...mine, e];
+      planPick = null;
+      saveReaction(ref, obj, { e: next, n: myName() }).then(() => {
+        if (!mine.includes(e) && ctx.an && ctx.an !== uid)
+          notify({ kat: "antworten", an: "uid:" + ctx.an, tab: "plan", titel: ctx.titel, text: `${myName()} reagiert mit ${e}${ctx.was ? " auf " + ctx.was : ""}` });
+      }).catch(err => planMsg("Reaktion nicht gespeichert: " + (err.message || err.code), true));
+    };
+    EMOJIS.forEach(e => {
+      const who = Object.values(all).filter(v => (v?.e || []).includes(e)).map(v => v.n || "?");
+      if (!who.length) return;
+      const b = el("button", "rx-chip" + (mine.includes(e) ? " on" : "")); b.type = "button";
+      b.append(el("span", "rx-e", e), el("span", "rx-n", String(who.length)));
+      b.title = who.join(", "); b.setAttribute("aria-label", `${e} ${who.length}: ${who.join(", ")}`); b.setAttribute("aria-pressed", String(mine.includes(e)));
+      b.onclick = () => toggle(e); box.append(b);
+    });
+    const add = el("button", "rx-add" + (planPick === key ? " on" : "")); add.type = "button"; add.setAttribute("aria-label", "Mit Emoji reagieren"); add.setAttribute("aria-expanded", String(planPick === key));
+    add.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="12" r="7.5"/><path d="M8.3 13.8c.7 1 1.6 1.5 2.7 1.5s2-.5 2.7-1.5"/><path d="M8.7 10h.01M13.3 10h.01"/><path d="M19.5 3v4M17.5 5h4"/></svg>';
+    add.onclick = () => { planPick = planPick === key ? null : key; planRender(); };
+    box.append(add);
+    if (planPick === key) {
+      const pk = el("div", "rx-pick"); pk.setAttribute("role", "group"); pk.setAttribute("aria-label", "Emoji auswählen");
+      EMOJIS.forEach(e => { const b = el("button", mine.includes(e) ? "on" : "", e); b.type = "button"; b.setAttribute("aria-pressed", String(mine.includes(e))); b.onclick = () => toggle(e); pk.append(b); });
+      box.append(pk);
+    }
+    return box;
+  }
+
   function planCard(it) {
     const c = el("article", "plan-card t-" + it.typ + (it.geschlossen ? " closed" : ""));
     const head = el("div", "pc-head");
@@ -2990,6 +3042,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     if (it.typ === "termin") c.append(planRsvp(it));
     if (it.typ === "umfrage") c.append(planPoll(it));
     if (it.typ === "termin" && it.datum) c.append(planCalRow(it));
+    c.append(reactBar("i:" + it.id, it, db.collection("planung").doc(it.id), { an: it.von, titel: it.titel || "Planung", was: "deinen Eintrag" }));
     const foot = el("div", "pc-foot"), info = el("div", "pc-info");
     info.append(el("span", "msg", `${it.vonName || "?"} · ${stamp(it.erstellt)}${it.geaendert ? " (geändert)" : ""}`));
     const nC = (planComments[it.id] || []).length, open = planOpenC.has(it.id);
@@ -3025,7 +3078,8 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
         hd.append(x);
       }
       const tx = el("div", "pc-ct"); tx.append(linkify(String(k.text || "")));
-      row.append(hd, tx); box.append(row);
+      row.append(hd, tx, reactBar("k:" + it.id + ":" + k.id, k, db.collection("planung").doc(it.id).collection("kommentare").doc(k.id), { an: k.von, titel: it.titel || "Planung", was: "deinen Kommentar" }));
+      box.append(row);
     });
     const form = el("div", "pc-cform"), ta = el("textarea"); ta.id = "pcIn-" + it.id; ta.rows = 1; ta.placeholder = "Kommentar schreiben …";
     ta.setAttribute("aria-label", "Kommentar schreiben"); ta.value = planDrafts[it.id] || "";
