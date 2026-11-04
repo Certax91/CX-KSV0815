@@ -119,8 +119,40 @@
 
   window.claude = { use: function (name) { return Promise.resolve(name === "db" ? db : name === "user" ? user : name === "downloads" ? downloads : null); } };
 
+
+  // ---------- Rückfragen im Design der App (statt der Systemabfrage „Auf der Seite file:// steht …“) ----------
+  // appConfirm({ title, text, ok, cancel, danger, onOk }) → Promise<boolean>; onOk läuft direkt beim Tippen (z. B. für Links)
+  var dlgClose = null;
+  window.appConfirm = function (o) {
+    o = o || {};
+    return new Promise(function (resolve) {
+      if (dlgClose) dlgClose(false);
+      var ov = document.createElement("div"); ov.className = "app-dlg"; ov.setAttribute("role", "alertdialog"); ov.setAttribute("aria-modal", "true");
+      var box = document.createElement("div"); box.className = "app-dlg-box";
+      var h = document.createElement("h2"); h.textContent = o.title || "Bitte bestätigen"; h.id = "appDlgT"; ov.setAttribute("aria-labelledby", "appDlgT");
+      var t = document.createElement("p"); t.textContent = o.text || "";
+      var act = document.createElement("div"); act.className = "app-dlg-act";
+      var no = document.createElement("button"); no.type = "button"; no.className = "btn ghost"; no.textContent = o.cancel || "Abbrechen";
+      var yes = document.createElement("button"); yes.type = "button"; yes.className = "btn" + (o.danger ? " btn-danger" : "") + (o.okClass ? " " + o.okClass : ""); yes.textContent = o.ok || "OK";
+      act.appendChild(no); act.appendChild(yes);
+      box.appendChild(h); if (o.text) box.appendChild(t); box.appendChild(act); ov.appendChild(box);
+      var done = function (v) {
+        if (!ov.parentNode) return; ov.parentNode.removeChild(ov); dlgClose = null;
+        document.removeEventListener("keydown", key, true); resolve(v);
+      };
+      var key = function (e) { if (e.key === "Escape") { e.stopPropagation(); done(false); } };
+      no.onclick = function () { done(false); };
+      yes.onclick = function () { if (o.onOk) { try { o.onOk(); } catch (e) { } } done(true); };
+      ov.onclick = function (e) { if (e.target === ov) done(false); };
+      document.addEventListener("keydown", key, true);
+      document.body.appendChild(ov); dlgClose = done;
+      setTimeout(function () { yes.focus(); }, 0);
+    });
+  };
+
   // Zurück-Taste: offene Popups schließen
   window.__ksvBack = function () {
+    if (dlgClose) { dlgClose(false); return true; }
     var em = document.getElementById("em"), pd = document.getElementById("pd");
     if ((em && !em.hidden) || (pd && !pd.hidden)) { document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })); return true; }
     if (window.__ksvTabBack && window.__ksvTabBack()) return true;   // andere Rubrik → zurück zur Tabelle
@@ -187,14 +219,18 @@
           if (!obj || !obj.config || !Array.isArray(obj.spieltage)) throw new Error("Das ist keine Sicherung des Spielbuchs.");
           if (cloud()) {
             if (!cloud().canRestore()) throw new Error("Nur wer eintragen darf, kann eine Sicherung einspielen.");
-            if (!confirm("Sicherung vom " + (obj.exported || "?").slice(0, 10) + " mit " + obj.spieltage.length + " Spieltagen für alle einspielen? Die aktuellen Daten in der Cloud werden dabei ersetzt.")) return;
-            msg("Spiele ein …");
-            cloud().restore(obj).then(function () { msg("Sicherung eingespielt: " + obj.spieltage.length + " Spieltage."); })
-              .catch(function (err) { msg("Einspielen fehlgeschlagen: " + (err && err.message || err)); });
+            window.appConfirm({ title: "Sicherung einspielen?", text: "Sicherung vom " + (obj.exported || "?").slice(0, 10) + " mit " + obj.spieltage.length + " Spieltagen für alle einspielen? Die aktuellen Daten in der Cloud werden dabei ersetzt.", ok: "Einspielen", danger: true }).then(function (ok) {
+              if (!ok) return;
+              msg("Spiele ein …");
+              cloud().restore(obj).then(function () { msg("Sicherung eingespielt: " + obj.spieltage.length + " Spieltage."); })
+                .catch(function (err) { msg("Einspielen fehlgeschlagen: " + (err && err.message || err)); });
+            });
             return;
           }
-          if (!confirm("Sicherung vom " + (obj.exported || "?").slice(0, 10) + " mit " + (obj.spieltage || []).length + " Spieltagen einspielen? Die aktuellen Daten auf diesem Handy werden dabei ersetzt.")) return;
-          restore(obj); msg("Sicherung eingespielt: " + obj.spieltage.length + " Spieltage.");
+          window.appConfirm({ title: "Sicherung einspielen?", text: "Sicherung vom " + (obj.exported || "?").slice(0, 10) + " mit " + (obj.spieltage || []).length + " Spieltagen einspielen? Die aktuellen Daten auf diesem Handy werden dabei ersetzt.", ok: "Einspielen", danger: true }).then(function (ok) {
+            if (!ok) return;
+            try { restore(obj); msg("Sicherung eingespielt: " + obj.spieltage.length + " Spieltage."); } catch (err) { msg("Einspielen fehlgeschlagen: " + err.message); }
+          });
         } catch (err) { msg("Einspielen fehlgeschlagen: " + err.message); }
         e.target.value = "";
       };

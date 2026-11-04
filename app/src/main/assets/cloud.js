@@ -364,8 +364,9 @@
         kl.appendChild(kc); kl.appendChild(document.createTextNode(" Kassierer"));
         ctl.appendChild(sp); ctl.appendChild(rl); ctl.appendChild(kl);
         if (!self) ctl.appendChild(button("Entfernen", "iconbtn", function () {
-          if (!confirm((d.name || d.email) + " entfernen? Das Konto hat danach keinen Zugriff mehr.")) return;
-          fs.doc("nutzer/" + x.id).delete().catch(function (e) { umsg.textContent = msgOf(e); });
+          window.appConfirm({ title: "Mitglied entfernen?", text: (d.name || d.email) + " hat danach keinen Zugriff mehr auf das Spielbuch.", ok: "Entfernen", danger: true }).then(function (ok) {
+            if (ok) fs.doc("nutzer/" + x.id).delete().catch(function (e) { umsg.textContent = msgOf(e); });
+          });
         }));
         row.appendChild(ctl); list.appendChild(row);
       });
@@ -393,7 +394,9 @@
         (s.exists ? " In der Cloud sind schon Daten vorhanden – beim Übernehmen werden sie ersetzt." : " Die Cloud ist noch leer.")));
       var m = h("span", "msg", "");
       var go = button("In die Cloud übernehmen", "btn", function () {
-        if (s.exists && !confirm("Die Daten in der Cloud werden durch die Daten dieses Handys ersetzt. Fortfahren?")) return;
+        (s.exists ? window.appConfirm({ title: "Daten übernehmen?", text: "Die Daten in der Cloud werden durch die Daten dieses Handys ersetzt.", ok: "Übernehmen", danger: true }) : Promise.resolve(true)).then(function (ok) { if (ok) migrate(); });
+      });
+      var migrate = function () {
         go.disabled = true; m.textContent = "Übertrage …";
         var obj = { config: JSON.parse(localCfg || "{}"), spieltage: games.map(function (k) { return { id: k.slice((P + "spieltage/").length), data: JSON.parse(localStorage.getItem(k)) }; }) };
         window.KSV_BACKUP.restore(obj).then(function () {
@@ -405,7 +408,7 @@
           m.textContent = "Fertig: " + obj.spieltage.length + " Spieltage" + (hasRules ? " und das Regelwerk" : "") + " sind jetzt in der Cloud.";
           go.hidden = true;
         }).catch(function (e) { go.disabled = false; m.textContent = "Übertragung fehlgeschlagen: " + msgOf(e); });
-      });
+      };
       go.style.alignSelf = "flex-start"; go.style.marginTop = "6px";
       box.appendChild(go); box.appendChild(m); grid.appendChild(box);
     }).catch(function () { });

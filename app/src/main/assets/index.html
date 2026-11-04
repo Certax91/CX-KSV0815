@@ -641,6 +641,14 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
 .kass-open button{border:1px solid var(--r4);background:var(--bg);color:var(--ink);border-radius:999px;padding:3px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .pp-input{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;padding:7px 9px;font:inherit}
 a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
+/* ---------- Rückfragen im App-Design ---------- */
+.app-dlg{position:fixed;inset:0;z-index:100;background:rgba(10,10,10,.6);display:flex;align-items:center;justify-content:center;padding:20px}
+.app-dlg-box{width:100%;max-width:420px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.4);padding:20px;display:flex;flex-direction:column;gap:12px;animation:tabIn .15s ease-out}
+.app-dlg-box h2{font-family:var(--f-display);font-weight:400;font-size:20px;margin:0;line-height:1.25;padding-bottom:10px;border-bottom:2px solid var(--gold)}
+.app-dlg-box p{margin:0;font-size:15px;line-height:1.5;white-space:pre-line;color:var(--ink)}
+.app-dlg-act{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:4px}
+.app-dlg-act .btn{padding:9px 16px}
+.btn.btn-danger{background:var(--danger);border-color:var(--danger);color:#fff}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -1824,8 +1832,9 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
   async function payViaPaypal(p, list, sum) {
     const url = paypalUrl(cfg.paypal, sum);
     if (!url) { $("pdMsg").textContent = "Es ist noch kein PayPal-Link hinterlegt. Bitte beim Verwalter melden."; return; }
-    if (!confirm(`Du wirst zu PayPal weitergeleitet. Bitte zahle dort ${eur(sum)} ein.\n\nDie Beträge stehen danach auf „Bezahlung wird geprüft“, bis der Kassierer sie bestätigt.`)) return;
-    openExternal(url);
+    const ok = await window.appConfirm({ title: "Offene Beträge bezahlen?", text: `Du wirst zu PayPal weitergeleitet. Bitte zahle dort ${eur(sum)} ein.\n\nDie Beträge stehen danach auf „Bezahlung wird geprüft“, bis der Kassierer sie bestätigt.`,
+      ok: "Weiter zu PayPal", okClass: "pay-btn", onOk: () => openExternal(url) });   // PayPal direkt beim Tippen öffnen (sonst blockt der Browser)
+    if (!ok) return;
     detailBusy = true; renderDetail();
     try { for (const g of list) await setPay(g, p.id, "check"); $("pdMsg").textContent = `${eur(sum)} gemeldet – die Bezahlung wird geprüft.`; }
     catch (e) { $("pdMsg").textContent = "Status konnte nicht gesetzt werden: " + (e?.message || e?.code || "unbekannter Fehler"); }
@@ -2605,7 +2614,10 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
   $("regelFile").onchange = e => {
     const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
     if (!/pdf$/i.test(f.type) && !/\.pdf$/i.test(f.name)) return regelMsg("Bitte eine PDF-Datei wählen.", true);
-    if (regelBlocks && !confirm("Der bisherige Text des Regelwerks wird durch den Inhalt der PDF ersetzt. Fortfahren?")) return;
+    if (regelBlocks) { window.appConfirm({ title: "Regelwerk ersetzen?", text: "Der bisherige Text des Regelwerks wird durch den Inhalt der PDF ersetzt.", ok: "Ersetzen", danger: true }).then(ok => { if (ok) regelImport(f); }); return; }
+    regelImport(f);
+  };
+  function regelImport(f) {
     regelMsg("PDF wird eingelesen …");
     const rd = new FileReader();
     rd.onload = () => {
@@ -2619,7 +2631,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     };
     rd.onerror = () => regelMsg("Die Datei konnte nicht gelesen werden.", true);
     rd.readAsDataURL(f);
-  };
+  }
   let regelQT = null;
   $("regelQ").oninput = () => { clearTimeout(regelQT); regelQT = setTimeout(regelRender, 200); };
 
@@ -2826,8 +2838,8 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     if (doodle && best && canEditItem(it)) {
       const o = opts.find(x => cnt(x, "ja") === best);
       const b = el("button", "iconbtn", "Als Termin übernehmen"); b.type = "button";
-      b.onclick = () => {
-        if (!confirm(`„${label(o)}“ als Termin anlegen und die Abstimmung beenden?`)) return;
+      b.onclick = async () => {
+        if (!await window.appConfirm({ title: "Als Termin übernehmen?", text: `„${label(o)}“ wird als Termin angelegt und die Abstimmung beendet.`, ok: "Übernehmen" })) return;
         db.collection("planung").add({ typ: "termin", titel: it.titel, text: it.text || "", datum: o.datum || todayIso(), zeit: o.zeit || "", ort: o.text || "", von: ME().uid, vonName: myName(), erstellt: Date.now() })
           .then(() => db.collection("planung").doc(it.id).update({ geschlossen: true, geaendert: Date.now() }))
           .then(() => planMsg("Termin angelegt.")).catch(e => planMsg("Fehler: " + (e.message || e.code), true));
@@ -2930,8 +2942,8 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     c.append(foot);
     return c;
   }
-  function planDelete(it) {
-    if (!confirm(`„${it.titel || "Eintrag"}“ löschen?`)) return;
+  async function planDelete(it) {
+    if (!await window.appConfirm({ title: "Eintrag löschen?", text: `„${it.titel || "Eintrag"}“ wird für alle gelöscht.`, ok: "Löschen", danger: true })) return;
     const ref = db.collection("planung").doc(it.id);
     ref.collection("stimmen").get().then(s => Promise.all(s.docs.map(d => (d.ref || ref.collection("stimmen").doc(d.id)).delete().catch(() => {})))).catch(() => {})
       .then(() => ref.delete()).then(() => planMsg("Gelöscht.")).catch(e => planMsg("Löschen fehlgeschlagen: " + (e.message || e.code), true));
