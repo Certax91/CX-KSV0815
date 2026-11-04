@@ -12,9 +12,24 @@ service cloud.firestore {
     function darfLesen() { return verwalterMail() || rolle() in ['lesen', 'schreiben', 'admin']; }
     function darfSchreiben() { return verwalterMail() || rolle() in ['schreiben', 'admin']; }
     function istVerwalter() { return verwalterMail() || rolle() == 'admin'; }
+    function profil() { return get(/databases/$(database)/documents/nutzer/$(request.auth.uid)).data; }
+    function istKassierer() { return hatProfil() && profil().get('kassierer', false) == true; }
+    function nurZahlstatus() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pay']); }
+    function eigeneZahlungGemeldet() {
+      let s = hatProfil() ? profil().get('spielerId', null) : null;
+      return s is string
+        && request.resource.data.pay.diff(resource.data.get('pay', {})).affectedKeys().hasOnly([s])
+        && request.resource.data.pay[s] == 'check';
+    }
 
     match /config/{id}    { allow read: if darfLesen(); allow write: if darfSchreiben(); }
-    match /spieltage/{id} { allow read: if darfLesen(); allow write: if darfSchreiben(); }
+    // Spieltage: Eintragende schreiben alles; Kassierer ändern den Zahlstatus;
+    // jedes Mitglied darf für den eigenen Spieler „wird geprüft“ melden (nach Zahlung über PayPal)
+    match /spieltage/{id} {
+      allow read: if darfLesen();
+      allow write: if darfSchreiben();
+      allow update: if darfLesen() && nurZahlstatus() && (istKassierer() || eigeneZahlungGemeldet());
+    }
     match /regelwerk/{id} { allow read: if darfLesen(); allow write: if darfSchreiben(); }
 
     match /planung/{id} {

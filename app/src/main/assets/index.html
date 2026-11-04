@@ -630,6 +630,17 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
 .re-help code{font-size:11px;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--muted)}
 #regelEdText{width:100%;min-height:55vh;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:10px;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;resize:vertical}
 .regel-ed .actions{position:sticky;bottom:-14px;background:var(--bg);padding:10px 0 4px;border-top:1px solid var(--line)}
+/* ---------- Bezahlen / Prüfen ---------- */
+.pay.check{border-color:var(--r4);color:var(--r4)}
+.sub.check{color:var(--r4);font-weight:600}
+.pd-openlist{display:flex;flex-direction:column;gap:2px;margin-top:4px;font-size:13px}
+.pd-openlist .ol-check{color:var(--muted)} .pd-openlist em{font-style:normal;color:var(--r4);font-weight:600}
+.btn.pay-btn{background:#0070ba;border-color:#0070ba;color:#fff}
+.kass-open{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--r4);background:color-mix(in srgb,var(--r4) 12%,transparent);border-radius:8px;padding:8px 10px;font-size:13px}
+.kass-open[hidden]{display:none}
+.kass-open button{border:1px solid var(--r4);background:var(--bg);color:var(--ink);border-radius:999px;padding:3px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.pp-input{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;padding:7px 9px;font:inherit}
+a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -653,7 +664,7 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
       <label class="excl" for="fNoFee"><input type="checkbox" id="fNoFee"> Ohne Beitrag</label>
       <label class="excl" for="fDouble" title="Die Platzierungen dieses Spieltags zählen doppelt in die Platzsumme"><input type="checkbox" id="fDouble"> Doppelte Wertung</label>
       <div class="field"><label class="label" for="fPayAll">Zahlstatus für alle</label>
-        <select id="fPayAll"><option value="">auswählen …</option><option value="paid">bezahlt</option><option value="open">offen</option></select></div>
+        <select id="fPayAll"><option value="">auswählen …</option><option value="paid">bezahlt</option><option value="check">wird geprüft</option><option value="open">offen</option></select></div>
     </div>
     <div class="pghead" aria-hidden="true"><span>Spieler</span><span id="pgUnit">Spielgeld €</span><span>Platz</span><span>Beitrag €</span><span>Status</span></div>
     <div class="pgrid" id="pgrid"></div>
@@ -764,6 +775,7 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
   <section id="secStand" aria-labelledby="h-stand" style="display:flex;flex-direction:column;gap:12px">
     <div class="sechead"><h2 id="h-stand">Tabelle</h2></div>
     <button class="me-open" id="meOpen" type="button" hidden></button>
+    <div class="kass-open" id="kassOpen" hidden></div>
     <div class="standings" id="standings"></div>
   </section>
 
@@ -869,6 +881,11 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
       </div>
     </div>
     <div class="setgrid">
+      <div class="field">
+        <span class="label">PayPal-Link (Kasse)</span>
+        <input type="url" id="paypalLink" inputmode="url" autocomplete="off" placeholder="https://paypal.me/… oder Link zum PayPal-Pool" class="pp-input">
+        <span class="msg" id="paypalMsg"></span>
+      </div>
       <div class="field rules-wrap">
         <span class="label">Tackengeld, Abwesenheitsplatz und Monatsbeitrag</span>
         <div class="tablebox"><table class="rules" id="rulesTable"></table></div>
@@ -907,7 +924,7 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const DEFAULT_CFG = { players: [], mode: "money", view: "money", dir: "low", rules: null, feeRules: null, seasons: [] };
+  const DEFAULT_CFG = { players: [], mode: "money", view: "money", dir: "low", rules: null, feeRules: null, seasons: [], paypal: "" };
   let db = null, canWrite = true;
   let cfg = { ...DEFAULT_CFG }, games = [], season = "all", editing = null, placeTouched = {}, feeTouched = {};
   let entryUnit = "money", sortKey = "placeSum", sortAsc = true;
@@ -951,7 +968,10 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
   const other = v => cfg.view === "points" ? eur(v.m) : pts(v.p);
   const money = (g, pid) => { const v = g.scores?.[pid]; return v == null ? null : vOf(v, unitOf(g), g.date); };
   const feeOf = (g, pid) => { const f = g.fees?.[pid]; return f == null ? null : f; };
-  const PAY = { paid: "bezahlt", open: "offen" };
+  const PAY = { paid: "bezahlt", check: "wird geprüft", open: "offen" };
+  // Kassierer: darf Zahlungen als bezahlt bestätigen (lokale App: immer)
+  const isKass = () => !window.KSV_ME || !!window.KSV_ME.kassierer;
+  const setPay = (g, pid, st) => db.collection("spieltage").doc(g.id).update({ pay: { ...(g.pay || {}), [pid]: st } });
   const payOf = (g, pid) => g.pay?.[pid] || "paid";   // ältere Spieltage ohne Angabe gelten als bezahlt
   const openAmt = (g, pid) => { const st = payOf(g, pid), m = money(g, pid)?.m || 0, f = feeOf(g, pid) || 0;
     return st === "paid" ? 0 : m + f; };
@@ -1057,7 +1077,7 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
       const nm = me.name || me.email || "";
       $("acctIni").textContent = nm.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map(x => x[0].toUpperCase()).join("");
       $("acctBtn").classList.add("has-ini");
-      const h = $("amHead"); h.textContent = ""; h.append(el("b", null, nm), el("span", null, { lesen: "Nur ansehen", schreiben: "Darf eintragen", admin: "Verwalter" }[me.rolle] || ""));
+      const h = $("amHead"); h.textContent = ""; h.append(el("b", null, nm), el("span", null, ({ lesen: "Nur ansehen", schreiben: "Darf eintragen", admin: "Verwalter" }[me.rolle] || "") + (me.kassierer ? " · Kassierer" : "")));
       h.hidden = false; $("logoutBtn").hidden = false; $("amSep").hidden = false;
     }
     render(); planStart();
@@ -1077,7 +1097,16 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
     const box = $("standings"); box.textContent = "";
     const mine = st.find(s => s.p.id === myPid()), mo = $("meOpen");
     mo.hidden = !(mine && mine.owe > 0);
-    if (!mo.hidden) { mo.textContent = `Du hast offene Beträge: ${eur(mine.owe)} – antippen für Details`; mo.onclick = () => openDetail(mine.p.id); }
+    if (!mo.hidden) { mo.textContent = `Du hast offene Beträge: ${eur(mine.owe)} – antippen zum Bezahlen`; mo.onclick = () => openDetail(mine.p.id); }
+    const ko = $("kassOpen"); ko.textContent = "";
+    if (window.KSV_ME && isKass()) {
+      const chk = cfg.players.map(p => ({ p, sum: games.filter(g => payOf(g, p.id) === "check").reduce((a, g) => a + openAmt(g, p.id), 0) })).filter(x => x.sum > 0);
+      if (chk.length) {
+        ko.append(el("b", null, "Zahlungen prüfen: "));
+        chk.forEach(x => { const b = el("button", null, `${x.p.name} ${eur(x.sum)}`); b.type = "button"; b.onclick = () => openDetail(x.p.id); ko.append(b); });
+      }
+    }
+    ko.hidden = !ko.children.length;
     if (!cfg.players.length) { box.innerHTML = `<div class="empty" style="grid-column:1/-1"><strong>Noch keine Spieler angelegt</strong>Unten in den Einstellungen die Mitspieler eintragen.</div>`; return; }
     const ranked = [...st].sort((a, b) => (!!a.p.guest - !!b.p.guest) || (b.placed > 0) - (a.placed > 0) || a.placeSum - b.placeSum || b.wins - a.wins || (a.avgPlace ?? 99) - (b.avgPlace ?? 99));
     const hd = el("div", "stand-head"); ["#", "Spieler", "PS", "Ø Pl.", cfg.view === "points" ? "Punkte" : "Spielgeld"].forEach(t => hd.append(el("span", null, t))); box.append(hd);
@@ -1145,7 +1174,7 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
         if (f != null) { subs.push("Beitr. " + eur(f)); const std = at(rules(), g.date)?.fee; if (!g.noFee && std != null && Math.abs(f - std) > 0.001 && (f > 0 || isMember(p.id))) brief.push("B " + nf2.format(f)); }
         if (subs.length) td.append(el("span", "sub full", subs.join(" · ")));
         if (brief.length) td.append(el("span", "sub brief", brief.join(" · ")));
-        const oa = openAmt(g, p.id); if (oa > 0) { const o = el("span", "sub open", `offen ${eur(oa)}`); o.title = "offen"; td.append(o); }
+        const oa = openAmt(g, p.id); if (oa > 0) { const ck = payOf(g, p.id) === "check"; const o = el("span", "sub " + (ck ? "check" : "open"), `${ck ? "prüfen" : "offen"} ${eur(oa)}`); o.title = ck ? "Bezahlung wird geprüft" : "offen"; td.append(o); }
       });
       const tk = r.insertCell(), fs = feeSum(g);
       tk.append(valEl(sum), el("span", "sub full", fs ? `+ Beitr. ${eur(fs)}` : other(sum)));
@@ -1340,8 +1369,9 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
       fi.oninput = () => { feeTouched[p.id] = true; hintConv(p.id); };
       const ps2 = el("select", "pay"); ps2.id = "o-" + p.id; ps2.dataset.pid = p.id; ps2.dataset.kind = "o"; ps2.setAttribute("aria-label", `${p.name}: Zahlstatus`);
       Object.entries(PAY).forEach(([v, t]) => { const o = el("option", null, t); o.value = v; ps2.append(o); });
-      ps2.value = keep[p.id + "o"] === "paid" ? "paid" : "open"; ps2.className = "pay " + (ps2.value === "paid" ? "paid" : "open");
-      ps2.onchange = () => ps2.className = "pay " + (ps2.value === "paid" ? "paid" : "open");
+      ps2.value = PAY[keep[p.id + "o"]] ? keep[p.id + "o"] : "open"; ps2.className = "pay " + ps2.value;
+      ps2.onchange = () => ps2.className = "pay " + ps2.value;
+      if (!isKass() && ps2.value !== "paid") ps2.querySelector('option[value="paid"]').disabled = true;   // „bezahlt“ setzt nur der Kassierer
       if (p.guest) head.querySelector("b").append(el("span", "gtag", "Gast"));
       w.append(head, s, pl, l1, l2, fr, tot, ps2); box.append(w); hintConv(p.id);
     });
@@ -1414,7 +1444,7 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
       $("s-" + p.id).value = v == null ? "" : (entryUnit === "money" ? nf2.format(v) : String(v).replace(".", ","));
       $("p-" + p.id).value = pl ?? "";
       $("f-" + p.id).value = f == null ? "" : nf2.format(f);
-      const o = $("o-" + p.id); o.value = payOf(g, p.id) === "paid" ? "paid" : "open"; o.onchange();
+      const o = $("o-" + p.id); o.value = payOf(g, p.id); if (o.querySelector('option[value="paid"]')) o.querySelector('option[value="paid"]').disabled = !isKass() && o.value !== "paid"; o.onchange();
       const away = isAbsent(g, p.id); $("a-" + p.id).checked = away; $("a-" + p.id).closest(".pin").classList.toggle("away", away);
       if (pl && (away ? pl !== AP() : pl !== rk[p.id])) placeTouched[p.id] = true;
       if (!pl) placeTouched[p.id] = true;
@@ -1465,11 +1495,18 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
       if (!db || !canWrite) return;
       try { await db.doc("config/main").set({ players: cfg.players, mode: cfg.mode, view: cfg.view, dir: cfg.dir,
         rules: rules().map(r => ({ from: r.from || "", factor: r.factor, absentPlace: r.absentPlace, fee: r.fee })),
-        feeRules: [], seasons: cfg.seasons || [] }); }
+        feeRules: [], seasons: cfg.seasons || [], paypal: cfg.paypal || "" }); }
       catch { say("Einstellungen konnten nicht gespeichert werden.", true); }
     }, 500);
   }
+  $("paypalLink").onchange = () => {
+    const v = $("paypalLink").value.trim();
+    if (v && !/^(https?:\/\/)?([\w-]+\.)*paypal\.(me|com)\b/i.test(v)) { $("paypalMsg").textContent = "Bitte einen PayPal-Link eintragen (paypal.me/… oder paypal.com/pools/…)."; return; }
+    cfg.paypal = v; saveCfg(); $("paypalMsg").textContent = v ? "Gespeichert." : "Entfernt.";
+  };
   function renderSettings() {
+    if (document.activeElement !== $("paypalLink")) $("paypalLink").value = cfg.paypal || "";
+    $("paypalLink").disabled = !canWrite;
     $("dLow").checked = cfg.dir === "low"; $("dHigh").checked = cfg.dir === "high";
     $("factorNote").textContent = `1 Punkt = ${eur(F(todayIso()))}`;
     $("vMoney").setAttribute("aria-pressed", String(cfg.view !== "points"));
@@ -1771,6 +1808,29 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
       const s = q.s; [s?.placed ? String(s.placeSum) : "–", s?.avgPlace ? fmtRank(s.avgPlace) : "–", s ? String(s.wins) : "–", s ? String(s.n) : "–", s?.paid ? show(s.total) : "–", s ? eur(s.fees) : "–", s ? eur(s.total.m + s.fees) : "–"].forEach(v => r.insertCell().textContent = v); });
   }
 
+  // ---------- Bezahlen über PayPal ----------
+  // paypal.me-Links bekommen den Betrag angehängt; Pool-Links werden unverändert geöffnet.
+  function paypalUrl(link, sum) {
+    let u = String(link || "").trim(); if (!u) return "";
+    if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+    if (/paypal\.me\//i.test(u)) { u = u.replace(/\/+$/, "").replace(/\/\d+([.,]\d+)?(EUR)?$/i, ""); u += "/" + sum.toFixed(2) + "EUR"; }
+    return u;
+  }
+  function openExternal(url) {
+    if (window.AndroidApp) { location.href = url; return; }   // App: öffnet PayPal-App bzw. Browser
+    const w = window.open(url, "_blank");   // „noopener“ würde immer null liefern
+    if (w) { try { w.opener = null; } catch {} } else location.href = url;
+  }
+  async function payViaPaypal(p, list, sum) {
+    const url = paypalUrl(cfg.paypal, sum);
+    if (!url) { $("pdMsg").textContent = "Es ist noch kein PayPal-Link hinterlegt. Bitte beim Verwalter melden."; return; }
+    if (!confirm(`Du wirst zu PayPal weitergeleitet. Bitte zahle dort ${eur(sum)} ein.\n\nDie Beträge stehen danach auf „Bezahlung wird geprüft“, bis der Kassierer sie bestätigt.`)) return;
+    openExternal(url);
+    detailBusy = true; renderDetail();
+    try { for (const g of list) await setPay(g, p.id, "check"); $("pdMsg").textContent = `${eur(sum)} gemeldet – die Bezahlung wird geprüft.`; }
+    catch (e) { $("pdMsg").textContent = "Status konnte nicht gesetzt werden: " + (e?.message || e?.code || "unbekannter Fehler"); }
+    detailBusy = false; renderDetail();
+  }
   function renderDetail() {
     if (!detailPid) return;
     const p = cfg.players.find(x => x.id === detailPid); if (!p) return closeDetail();
@@ -1783,27 +1843,43 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
     const openGames = games.filter(g => openAmt(g, p.id) > 0).sort((a, b) => a.date.localeCompare(b.date));
     const openSum = openGames.reduce((a, g) => a + openAmt(g, p.id), 0);
     const ob = $("pdOpen"); ob.textContent = "";
+    const mine = myPid() === p.id, kass = isKass();
+    const toPay = openGames.filter(g => payOf(g, p.id) === "open"), inCheck = openGames.filter(g => payOf(g, p.id) === "check");
+    const paySum = toPay.reduce((a, g) => a + openAmt(g, p.id), 0), checkSum = inCheck.reduce((a, g) => a + openAmt(g, p.id), 0);
     if (!openGames.length) ob.append(el("div", "pd-ok", "Keine offenen Beträge – alles bezahlt."));
     else {
-      const head = el("div", "pd-openhead");
-      head.append(el("div", null, ""), el("div", "pd-opensum", eur(openSum)));
-      head.firstChild.append(el("strong", null, `Offen: ${openGames.length} Spieltag${openGames.length === 1 ? "" : "e"}`), el("div", "msg", openGames.map(g => `${fmtDate(g.date)} (${eur(openAmt(g, p.id))})`).join(" · ")));
+      const head = el("div", "pd-openhead"), left = el("div");
+      left.append(el("strong", null, `Offen: ${openGames.length} Spieltag${openGames.length === 1 ? "" : "e"}`));
+      const lst = el("div", "pd-openlist");
+      openGames.forEach(g => { const ck = payOf(g, p.id) === "check", r = el("span", ck ? "ol-check" : "ol-open"); r.append(`${fmtDate(g.date)} · ${eur(openAmt(g, p.id))}`); if (ck) r.append(el("em", null, " · wird geprüft")); lst.append(r); });
+      left.append(lst);
+      head.append(left, el("div", "pd-opensum", eur(openSum)));
       ob.append(head);
       const act = el("div", "actions");
-      if (!detailConfirm) { const b = el("button", "btn", "Alle offenen Beträge als bezahlt markieren"); b.type = "button"; b.disabled = !canWrite || detailBusy; b.onclick = () => { detailConfirm = true; renderDetail(); }; act.append(b); }
-      else {
-        act.append(el("span", null, `${eur(openSum)} für ${p.name} als bezahlt markieren?`));
-        const y = el("button", "btn", "Ja, bezahlt"); y.type = "button"; y.disabled = detailBusy;
-        y.onclick = async () => {
-          detailBusy = true; renderDetail();
-          try { for (const g of openGames) await db.collection("spieltage").doc(g.id).update({ pay: { [p.id]: "paid" } }); $("pdMsg").textContent = `${eur(openSum)} als bezahlt markiert.`; }
-          catch (e) { $("pdMsg").textContent = e?.code === "invalid_argument" ? "Keine Schreibrechte." : "Markieren fehlgeschlagen. Bitte erneut versuchen."; }
-          detailBusy = false; detailConfirm = false; renderDetail();
-        };
-        const n = el("button", "btn ghost", "Abbrechen"); n.type = "button"; n.onclick = () => { detailConfirm = false; renderDetail(); };
-        act.append(y, n);
+      if (mine && toPay.length) {   // eigener Spieler: über PayPal bezahlen
+        const b = el("button", "btn pay-btn", `Offene Beträge bezahlen (${eur(paySum)})`); b.type = "button"; b.disabled = detailBusy;
+        b.onclick = () => payViaPaypal(p, toPay, paySum);
+        act.append(b);
       }
-      ob.append(act);
+      if (inCheck.length && !kass) act.append(el("span", "msg", `${eur(checkSum)}: Bezahlung wird vom Kassierer geprüft.`));
+      if (kass) {
+        if (!detailConfirm) {
+          const b = el("button", mine && toPay.length ? "btn ghost" : "btn", inCheck.length && !toPay.length ? "Zahlung geprüft – als bezahlt markieren" : "Als bezahlt markieren");
+          b.type = "button"; b.disabled = !db || detailBusy; b.onclick = () => { detailConfirm = true; renderDetail(); }; act.append(b);
+        } else {
+          act.append(el("span", null, `${eur(openSum)} für ${p.name} als bezahlt markieren?`));
+          const y = el("button", "btn", "Ja, bezahlt"); y.type = "button"; y.disabled = detailBusy;
+          y.onclick = async () => {
+            detailBusy = true; renderDetail();
+            try { for (const g of openGames) await setPay(g, p.id, "paid"); $("pdMsg").textContent = `${eur(openSum)} als bezahlt markiert.`; }
+            catch (e) { $("pdMsg").textContent = "Markieren fehlgeschlagen: " + (e?.message || e?.code || "unbekannter Fehler"); }
+            detailBusy = false; detailConfirm = false; renderDetail();
+          };
+          const n = el("button", "btn ghost", "Abbrechen"); n.type = "button"; n.onclick = () => { detailConfirm = false; renderDetail(); };
+          act.append(y, n);
+        }
+      }
+      if (act.children.length) ob.append(act);
     }
     if (isCmp()) { renderDetailCmp(p); return; }
     $("pdPlaceBox").querySelector(".ct").textContent = "Platzierung je Spieltag";
@@ -2810,6 +2886,18 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
     row.append(main, choices); return row;
   }
 
+  // Text mit anklickbaren Links: https://…, www.… oder [Text](https://…)
+  function linkify(text) {
+    const f = document.createDocumentFragment(), re = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<]+[^\s<.,;:!?)"'»“])|(www\.[^\s<]+[^\s<.,;:!?)"'»“])/gi;
+    let last = 0, m;
+    while ((m = re.exec(text))) {
+      if (m.index > last) f.append(text.slice(last, m.index));
+      const href = m[2] || m[3] || "https://" + m[4], a = el("a", "lnk", m[1] || m[3] || m[4]);
+      a.href = href; a.target = "_blank"; a.rel = "noopener"; f.append(a); last = re.lastIndex;
+    }
+    if (last < text.length) f.append(text.slice(last));
+    return f;
+  }
   function planCard(it) {
     const c = el("article", "plan-card t-" + it.typ + (it.geschlossen ? " closed" : ""));
     const head = el("div", "pc-head");
@@ -2824,9 +2912,9 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
     const meta = [];
     if (it.typ === "termin") { if (it.datum) meta.push(wdate(it.datum) + (it.zeit ? `, ${it.zeit} Uhr` : "")); if (it.ort) meta.push(it.ort); }
     if (it.typ === "umfrage" && it.art !== "termin") meta.push(it.mehrfach ? "Mehrere Antworten möglich" : "Eine Antwort");
-    if (meta.length) tt.append(el("span", "pc-meta", meta.join(" · ")));
+    if (meta.length) { const mt = el("span", "pc-meta"); mt.append(linkify(meta.join(" · "))); tt.append(mt); }
     head.append(tt); c.append(head);
-    if (it.text) c.append(el("p", "pc-text", it.text));
+    if (it.text) { const tx = el("p", "pc-text"); tx.append(linkify(it.text)); c.append(tx); }
     if (it.typ === "termin") c.append(planRsvp(it));
     if (it.typ === "umfrage") c.append(planPoll(it));
     if (it.typ === "termin" && it.datum) c.append(planCalRow(it));
@@ -2882,9 +2970,9 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
       const row = el("div", "pf-row"); body.append(row);
       const d = el("label", "field"); d.append(el("span", "label", "Datum"), datum = inp("date", it.datum || firstFriday())); row.append(d);
       const z = el("label", "field"); z.append(el("span", "label", "Uhrzeit"), zeit = inp("time", it.zeit || "19:00")); row.append(z);
-      ort = fld("Ort", inp("text", it.ort, "z. B. bei Aron"));
+      ort = fld("Ort", inp("text", it.ort, "z. B. bei Aron oder Link zu Google Maps"));
     }
-    const text = fld(typ === "notiz" ? "Text" : "Beschreibung (optional)", (() => { const t = el("textarea"); t.rows = typ === "notiz" ? 7 : 3; t.value = it.text || ""; return t; })());
+    const text = fld(typ === "notiz" ? "Text" : "Beschreibung (optional)", (() => { const t = el("textarea"); t.rows = typ === "notiz" ? 7 : 3; t.value = it.text || ""; t.placeholder = "Links einfach einfügen (https://…) oder als [Text](https://…)"; return t; })());
     if (typ === "umfrage") {
       const seg = el("div", "seg"); fld("Art", seg);
       const drawOpts = () => {

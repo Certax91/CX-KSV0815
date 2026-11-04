@@ -95,6 +95,7 @@
     ".konto-row select{border:1px solid var(--line,#ccc);background:var(--bg,#fff);color:var(--ink,#111);border-radius:6px;padding:5px 6px;font:inherit;font-size:13px;max-width:100%}",
     ".konto-row select.need{border-color:var(--gold,#c98a12)}",
     ".konto-me{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:14px}",
+    ".kass-cb{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;cursor:pointer;padding:4px 2px}",
     ".konto-me .tag{font-size:11px;font-weight:700;border:1px solid var(--gold,#c98a12);color:var(--gold-ink,#8a5d06);border-radius:999px;padding:1px 8px}",
     ".ro .fab,.ro #regelUpload,.ro #bkImport{display:none!important}"
   ].join("\n");
@@ -212,7 +213,7 @@
       }
       var d = snap.data();
       if (started) {   // Rolle oder Spieler wurde geändert → neu starten, damit alles passt
-        if (!me || d.rolle !== me.rolle || (d.spielerId || null) !== (me.spielerId || null)) location.reload();
+        if (!me || d.rolle !== me.rolle || (d.spielerId || null) !== (me.spielerId || null) || !!d.kassierer !== me.kassierer) location.reload();
         return;
       }
       if (DARF_LESEN[d.rolle]) start(u, d); else viewWait(d);
@@ -222,7 +223,7 @@
   function start(u, d) {
     started = true;
     var canWrite = !!DARF_SCHREIBEN[d.rolle];
-    me = { uid: u.uid, email: u.email, name: d.name || "", rolle: d.rolle, spielerId: d.spielerId || null, canWrite: canWrite, admin: d.rolle === "admin" };
+    me = { uid: u.uid, email: u.email, name: d.name || "", rolle: d.rolle, spielerId: d.spielerId || null, canWrite: canWrite, admin: d.rolle === "admin", kassierer: !!d.kassierer };
     window.KSV_ME = me;
     window.KSV_LOGOUT = function () { auth.signOut(); };
     document.body.classList.add("cloud");
@@ -314,6 +315,7 @@
     var line = h("div", "konto-me");
     line.appendChild(h("b", null, me.name || me.email));
     line.appendChild(h("span", "tag", ROLLEN[me.rolle] || me.rolle));
+    if (me.kassierer) line.appendChild(h("span", "tag", "Kassierer"));
     var pl = h("span", "msg", ""); line.appendChild(pl);
     acc.appendChild(line);
     acc.appendChild(h("span", "msg", me.email));
@@ -335,7 +337,7 @@
     if (!me.admin) return;
     var box = h("div", "field"); box.appendChild(h("span", "label", "Mitglieder & Rechte"));
     var list = h("div"); box.appendChild(list);
-    box.appendChild(h("span", "msg", "Neue Mitglieder registrieren sich selbst in der App. Hier schaltest du sie frei, ordnest sie einem Spieler zu und legst fest, ob sie nur ansehen oder auch eintragen dürfen."));
+    box.appendChild(h("span", "msg", "Neue Mitglieder registrieren sich selbst in der App. Hier schaltest du sie frei, ordnest sie einem Spieler zu und legst die Rechte fest. Kassierer bestätigen gemeldete Zahlungen."));
     var umsg = h("span", "msg", ""); box.appendChild(umsg);
     grid.appendChild(box);
     var users = [];
@@ -357,7 +359,10 @@
         Object.keys(ROLLEN).forEach(function (k) { var o = h("option", null, ROLLEN[k]); o.value = k; rl.appendChild(o); });
         rl.value = d.rolle; rl.disabled = self; if (d.rolle === "warten") rl.classList.add("need");
         rl.onchange = function () { fs.doc("nutzer/" + x.id).update({ rolle: rl.value }).catch(function (e) { umsg.textContent = msgOf(e); }); };
-        ctl.appendChild(sp); ctl.appendChild(rl);
+        var kl = h("label", "kass-cb"), kc = h("input"); kc.type = "checkbox"; kc.checked = !!d.kassierer;
+        kc.onchange = function () { fs.doc("nutzer/" + x.id).update({ kassierer: kc.checked }).catch(function (e) { kc.checked = !kc.checked; umsg.textContent = msgOf(e); }); };
+        kl.appendChild(kc); kl.appendChild(document.createTextNode(" Kassierer"));
+        ctl.appendChild(sp); ctl.appendChild(rl); ctl.appendChild(kl);
         if (!self) ctl.appendChild(button("Entfernen", "iconbtn", function () {
           if (!confirm((d.name || d.email) + " entfernen? Das Konto hat danach keinen Zugriff mehr.")) return;
           fs.doc("nutzer/" + x.id).delete().catch(function (e) { umsg.textContent = msgOf(e); });
