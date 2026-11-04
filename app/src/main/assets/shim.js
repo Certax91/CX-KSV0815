@@ -188,7 +188,8 @@
       '<button class="iconbtn" id="bkImport" type="button">Sicherung einspielen</button>' +
       '<input type="file" id="bkFile" accept=".json,application/json" hidden></div>' +
       '<span class="msg" id="bkMsg"></span></div>';
-    details.appendChild(box);
+    var ver = document.getElementById("appVersion");   // Versionszeile bleibt ganz unten
+    if (ver && ver.parentNode === details) details.insertBefore(box, ver); else details.appendChild(box);
     var msg = function (t) { document.getElementById("bkMsg").textContent = t; };
     // Vereins-Version (cloud.js): Sicherung kommt aus der Cloud bzw. wird dorthin eingespielt
     var cloud = function () { return window.KSV_BACKUP || null; };

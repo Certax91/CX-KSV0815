@@ -70,7 +70,7 @@
     ".auth{position:fixed;inset:0;z-index:90;background:var(--bg,#fff);color:var(--ink,#111);overflow-y:auto;display:flex;justify-content:center;align-items:flex-start;padding:max(24px,env(safe-area-inset-top,0px)) 16px 32px}",
     ".auth-card{width:100%;max-width:400px;display:flex;flex-direction:column;gap:14px;margin-top:6vh}",
     ".auth-brand{display:flex;gap:12px;align-items:center;border-bottom:3px solid var(--ink,#111);padding-bottom:12px}",
-    ".auth-brand img{width:52px;height:auto;border-radius:6px;background:#fff}",
+    ".auth-brand img{width:52px;height:auto;border-radius:6px;background:#000}",
     ".auth-brand h1{font-family:var(--f-display);font-weight:400;font-size:28px;margin:0;line-height:1}",
     ".auth-brand p{margin:4px 0 0;color:var(--muted,#666);font-size:13px}",
     ".auth form,.auth .auth-box{display:flex;flex-direction:column;gap:10px}",
