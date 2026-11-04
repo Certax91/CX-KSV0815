@@ -603,6 +603,33 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
 .cal-choices{display:flex;gap:6px;flex-wrap:wrap}
 .cal-choices[hidden]{display:none}
 .cal-choices a.iconbtn{text-decoration:none;color:inherit}
+/* ---------- Statistik/Vergleich auf dem Handy: gleiche Schriftgrößen wie Tabelle und Spielbuch ---------- */
+@media (max-width:700px){
+  #secStat,#secCmp{gap:12px!important}
+  #secStat .sechead h2,#secCmp .sechead h2{font-size:18px}
+  #statRange,#cSub,#cRankNote{font-size:12px}
+  #secStat .kpis,#secCmp .kpis{gap:10px 12px}
+  #secStat .kpi,#secCmp .kpi{padding-top:6px;border-top-width:2px}
+  #secStat .kpi .k,#secCmp .kpi .k{font-size:10px;letter-spacing:.06em}
+  #secStat .kpi .n,#secCmp .kpi .n{font-size:18px;line-height:1.15}
+  #secStat .kpi .d,#secCmp .kpi .d{font-size:11.5px;line-height:1.3}
+  #secStat .chartbox .ct,#secCmp .chartbox .ct{font-size:13px}
+  #secStat th,#secStat td,#secCmp th,#secCmp td{padding:6px 6px}
+  #secStat thead th,#secCmp thead th{font-size:11.5px}
+  #secStat tbody th,#secCmp tbody th{font-size:13.5px}
+  #secStat td,#secCmp td,#secStat td .v,#secCmp td .v{font-size:13.5px}
+  #secStat tfoot th,#secStat tfoot td,#secCmp tfoot th,#secCmp tfoot td{font-size:12.5px}
+}
+/* ---------- Regelwerk: Export, Bearbeiten ---------- */
+.regel-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.regel-bar .regel-admin{margin-left:auto;display:flex;gap:6px}
+.regel-bar #regelPdf{padding:6px 12px;font-size:14px}
+.regel-admin .iconbtn{padding:4px 10px;font-size:12px}
+.regel-ed{max-width:760px}
+.re-help{display:flex;flex-wrap:wrap;gap:4px}
+.re-help code{font-size:11px;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--muted)}
+#regelEdText{width:100%;min-height:55vh;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:10px;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;resize:vertical}
+.regel-ed .actions{position:sticky;bottom:-14px;background:var(--bg);padding:10px 0 4px;border-top:1px solid var(--line)}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -640,6 +667,15 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
       <span class="msg" id="msg" aria-live="polite"></span>
     </div>
   </section>
+  </div>
+</div>
+
+<div class="pd" id="regelEd" hidden role="dialog" aria-modal="true" aria-labelledby="regelEdTitle">
+  <div class="pd-panel regel-ed">
+    <div class="pd-head"><h2 id="regelEdTitle">Regelwerk bearbeiten</h2><button class="iconbtn" id="regelEdClose" type="button">Schließen</button></div>
+    <div class="re-help" aria-label="Formatierung"><code># Titel</code><code>&gt; Untertitel</code><code>## Überschrift</code><code>### § 1 Paragraph</code><code>(1) Absatz</code><code>- Aufzählung</code><code>a) Aufzählung</code><code>**fett**</code></div>
+    <textarea id="regelEdText" spellcheck="true" aria-label="Text des Regelwerks"></textarea>
+    <div class="actions"><button class="btn" id="regelEdSave" type="button">Speichern</button><button class="btn ghost" id="regelEdCancel" type="button">Abbrechen</button><span class="msg" id="regelEdMsg"></span></div>
   </div>
 </div>
 
@@ -768,16 +804,11 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
   <section id="secRegel" aria-labelledby="h-regel">
     <div class="sechead"><h2 id="h-regel">Regelwerk</h2><span class="msg" id="regelInfo"></span></div>
     <div class="regel-bar">
-      <div class="seg" role="group" aria-label="Darstellung des Regelwerks" id="regelMode" hidden>
-        <button type="button" data-m="text" aria-pressed="true">Text</button>
-        <button type="button" data-m="pdf" aria-pressed="false">Original</button>
-      </div>
-      <div class="seg regel-zoom" role="group" aria-label="Zoom" id="regelZoom" hidden>
-        <button type="button" data-z="-1" aria-label="Verkleinern">−</button>
-        <button type="button" id="regelZoomVal" data-z="0" aria-label="Zoom zurücksetzen">100 %</button>
-        <button type="button" data-z="1" aria-label="Vergrößern">+</button>
-      </div>
-      <button class="iconbtn" id="regelUpload" type="button">PDF einfügen</button>
+      <button class="btn ghost" id="regelPdf" type="button" hidden>PDF exportieren</button>
+      <span class="regel-admin">
+        <button class="iconbtn" id="regelEdit" type="button" hidden>Bearbeiten</button>
+        <button class="iconbtn" id="regelUpload" type="button" hidden>PDF hochladen</button>
+      </span>
       <input type="file" id="regelFile" accept="application/pdf,.pdf" hidden>
     </div>
     <span class="msg" id="regelMsg" aria-live="polite"></span>
@@ -789,8 +820,7 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
       <nav class="regel-toc" id="regelToc" aria-label="Inhalt"></nav>
       <article class="regel-doc" id="regelDoc"></article>
     </div>
-    <div class="regel-view" id="regelView" hidden><div class="regel-pages" id="regelPages"></div></div>
-    <div class="regel-empty" id="regelEmpty" hidden><strong>Noch kein Regelwerk hinterlegt</strong>Tippe auf „PDF einfügen“ und wähle die PDF mit den Statuten. Der Text wird eingelesen und hier im Design der App angezeigt.</div>
+    <div class="regel-empty" id="regelEmpty" hidden><strong>Noch kein Regelwerk hinterlegt</strong><span id="regelEmptyAdmin">Über „Bearbeiten“ kannst du den Text erfassen oder über „PDF hochladen“ eine vorhandene PDF einlesen.</span></div>
   </section>
 
 
@@ -1861,7 +1891,7 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
       this.cur.push("BT", rgb(o.color || PC.ink) + " rg", `/${bold ? "F2" : "F1"} ${size} Tf`, `${xx.toFixed(2)} ${this.Y(y)} Td`, `(${esc}) Tj`, "ET");
     }
     image(x, y, w, h) { if (this.img) this.cur.push("q", `${w.toFixed(2)} 0 0 ${h.toFixed(2)} ${x.toFixed(2)} ${(this.H - y - h).toFixed(2)} cm`, "/Im1 Do", "Q"); }
-    output() {
+    output(title) {
       const objs = [], add = s => { objs.push(s); return objs.length; };
       const cat = add(null), pagesId = add(null);
       const f1 = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
@@ -1876,7 +1906,7 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
       objs.forEach((o, i) => { offs.push(out.length); out += `${i + 1} 0 obj\n${o}\nendobj\n`; });
       const xref = out.length;
       out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + offs.map(o => String(o).padStart(10, "0") + " 00000 n \n").join("");
-      out += `trailer\n<< /Size ${objs.length + 1} /Root ${cat} 0 R /Info << /Title (KSV 08/15 Auswertung) /Producer (KSV 08/15 Spielbuch) >> >>\nstartxref\n${xref}\n%%EOF`;
+      out += `trailer\n<< /Size ${objs.length + 1} /Root ${cat} 0 R /Info << /Title (${title || "KSV 08/15 Auswertung"}) /Producer (KSV 08/15 Spielbuch) >> >>\nstartxref\n${xref}\n%%EOF`;
       const bytes = new Uint8Array(out.length); for (let i = 0; i < out.length; i++) bytes[i] = out.charCodeAt(i) & 255; return bytes;
     }
   }
@@ -2287,9 +2317,7 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
   // in Überschriften, Absätze und Aufzählungen gegliedert und im Design der App angezeigt.
   // „Original“ zeigt die Seiten der PDF als Bilder (App: Android-PDF-Renderer, Browser: eingebauter Betrachter).
   const app = window.AndroidApp, native = !!(app && app.rulesInfo);
-  let regelZoom = 1, regelJob = 0, regelShown = false, regelMode = "text", regelBlocks = null;
-  try { regelZoom = Math.min(3, Math.max(1, parseFloat(localStorage.getItem("ksv-regelzoom")) || 1)); } catch {}
-  try { regelMode = localStorage.getItem("ksv-regelmode") === "pdf" ? "pdf" : "text"; } catch {}
+  let regelJob = 0, regelShown = false, regelBlocks = null;
   const regelMsg = (t, err) => { $("regelMsg").textContent = t || ""; $("regelMsg").classList.toggle("err", !!err); };
   const fmtSize = b => b >= 1048576 ? (b / 1048576).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
   function regelInfo() {
@@ -2446,141 +2474,196 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
     if (q.length >= 2 && hits) doc.querySelector("mark")?.scrollIntoView({ block: "center" });
   }
 
-  // Vereins-Version: Regelwerk liegt in der Cloud (Kopfdaten, eingelesener Text, PDF in Teilen)
+  // Vereins-Version: Regelwerk liegt in der Cloud (Kopfdaten + gegliederter Text)
   const cloudR = () => window.KSV_CLOUD?.regel || null;
-  async function regelInfoAny() {
-    if (!cloudR()) return regelInfo();
-    const m = await cloudR().meta(); if (!m) return null;
-    return { pages: m.pages || 0, size: m.size || 0, updated: m.updated || 0, cloud: m };
-  }
-  // In der App wird die PDF aus der Cloud einmal lokal abgelegt, damit Android die Seiten zeichnen kann
-  async function regelCloudPdf(info) {
-    const key = String(info.updated);
-    if (native) {
-      let have = ""; try { have = localStorage.getItem("ksv-regel-cloudkey") || ""; } catch {}
-      if (have !== key || !app.rulesInfo()) { const r = app.saveRules(await cloudR().pdf(info.cloud)); if (r !== "ok") throw new Error("PDF konnte nicht geladen werden"); try { localStorage.setItem("ksv-regel-cloudkey", key); } catch {} }
-      return null;
+  const isAdmin = () => !window.KSV_ME || !!window.KSV_ME.admin;
+  const LTXT = "ksv-regelwerk-text";
+  // Regelwerk laden → { blocks, updated, name }
+  async function regelLoad() {
+    if (cloudR()) {
+      const m = await cloudR().meta(); if (!m) return null;
+      const key = "c:" + m.updated;
+      try { const c = JSON.parse(localStorage.getItem("ksv-regeltext") || "null"); if (c && c.key === key) return { blocks: c.blocks, updated: m.updated, name: m.name }; } catch {}
+      let blocks = await cloudR().text();
+      if (!blocks && m.chunks) blocks = await regelExtract(b64bytes(await cloudR().pdf(m)));   // ältere Stände: nur PDF vorhanden
+      try { localStorage.setItem("ksv-regeltext", JSON.stringify({ key, v: 2, blocks })); } catch {}
+      return { blocks: blocks || [], updated: m.updated, name: m.name };
     }
-    return cloudR().pdf(info.cloud);
+    try { const t = JSON.parse(localStorage.getItem(LTXT) || "null"); if (t && t.blocks) return t; } catch {}
+    const info = regelInfo(); if (!info) return null;   // bisher gespeicherte PDF einmalig einlesen
+    const t = { blocks: await regelExtract(b64bytes(regelB64())), updated: info.updated || Date.now(), name: "Regelwerk.pdf" };
+    try { localStorage.setItem(LTXT, JSON.stringify(t)); } catch {}
+    return t;
   }
-  async function regelSaveCloud(b64, name) {
-    const blocks = await regelExtract(b64bytes(b64)), pages = regelExtract.pages || 0;
-    const updated = await cloudR().save(b64, name, blocks, pages);
-    if (native) { if (app.saveRules(b64) === "ok") try { localStorage.setItem("ksv-regel-cloudkey", String(updated)); } catch {} }
-    try { localStorage.setItem("ksv-regeltext", JSON.stringify({ key: `${Math.round(b64.length * 3 / 4)}:${updated}`, v: 2, blocks })); } catch {}
-    return updated;
-  }
-  window.__ksvRegelToCloud = (b64, name) => cloudR() ? regelSaveCloud(b64, name) : Promise.resolve(null);
-  async function regelLoadText(info) {
-    const key = `${info.size}:${info.updated}`;
-    try { const c = JSON.parse(localStorage.getItem("ksv-regeltext") || "null"); if (c && c.key === key && c.v === 2) return c.blocks; } catch {}
-    if (info.cloud) {
-      const blocks = await cloudR().text();
-      if (blocks) { try { localStorage.setItem("ksv-regeltext", JSON.stringify({ key, v: 2, blocks })); } catch {} return blocks; }
+  async function regelStore(blocks, name, pages) {
+    blocks = JSON.parse(JSON.stringify(blocks || []));
+    if (cloudR()) {
+      const updated = await cloudR().save(null, name, blocks, pages || 0);
+      try { localStorage.setItem("ksv-regeltext", JSON.stringify({ key: "c:" + updated, v: 2, blocks })); } catch {}
+      return updated;
     }
-    const b64 = info.cloud ? (native ? (await regelCloudPdf(info), regelB64()) : await regelCloudPdf(info)) : regelB64(); if (!b64) return null;
-    const blocks = await regelExtract(b64bytes(b64));
-    try { localStorage.setItem("ksv-regeltext", JSON.stringify({ key, v: 2, blocks })); } catch {}
-    return blocks;
+    const updated = Date.now(); localStorage.setItem(LTXT, JSON.stringify({ blocks, updated, name })); return updated;
   }
+  window.__ksvRegelToCloud = async (b64, name) => { if (!cloudR()) return null; const blocks = await regelExtract(b64bytes(b64)); return regelStore(blocks, name, regelExtract.pages); };
+  const blockChars = blocks => (blocks || []).reduce((n, b) => n + b.segs.reduce((m, s) => m + s.t.length, 0), 0);
 
   async function regelShow(force) {
-    if (regelShown && !force) return; regelShown = true;
-    const job = ++regelJob;
-    let info = null;
-    try { info = await regelInfoAny(); } catch (e) { regelMsg("Regelwerk konnte nicht geladen werden: " + e.message, true); return; }
+    if (regelShown && !force) { if (regelBlocks) regelRender(); return; }
+    regelShown = true;
+    const job = ++regelJob, admin = isAdmin();
+    $("regelEdit").hidden = !admin; $("regelUpload").hidden = !admin; $("regelEmptyAdmin").hidden = !admin;
+    let d = null;
+    try { d = await regelLoad(); }
+    catch (e) { if (job === regelJob) regelMsg("Regelwerk konnte nicht geladen werden: " + (e.message || e), true); return; }
     if (job !== regelJob) return;
-    $("regelUpload").textContent = info ? "PDF aktualisieren" : "PDF einfügen";
-    $("regelEmpty").hidden = !!info; $("regelMode").hidden = !info;
-    $("regelInfo").textContent = info ? [info.pages ? `${info.pages} Seite${info.pages === 1 ? "" : "n"}` : "", info.updated ? "Stand " + fmtDate(new Date(info.updated).toISOString().slice(0, 10)) : ""].filter(Boolean).join(" · ") : "";
-    $("regelMode").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === regelMode)));
-    $("regelText").hidden = !info || regelMode !== "text";
-    $("regelView").hidden = !info || regelMode !== "pdf";
-    $("regelZoom").hidden = !info || regelMode !== "pdf" || !native;
-    if (!info) return;
-    if (regelMode === "text") {
-      if (regelBlocks && !force) { regelRender(); return; }
-      $("regelDoc").textContent = ""; $("regelToc").textContent = "";
-      const wait = el("p", "rd-wait", "Regelwerk wird eingelesen …"); $("regelDoc").append(wait);
-      regelLoadText(info).then(blocks => {
-        if (job !== regelJob) return;
-        const chars = (blocks || []).reduce((n, b) => n + b.segs.reduce((m, s) => m + s.t.length, 0), 0);
-        if (chars < 40) {   // eingescannte PDF ohne Text → Original zeigen
-          regelBlocks = null; regelMode = "pdf"; regelShow(true);
-          regelMsg("Diese PDF enthält keinen lesbaren Text (vermutlich eingescannt) – es wird das Original angezeigt.", true); return;
-        }
-        regelBlocks = blocks; regelRender();
-      }).catch(err => {
-        if (job !== regelJob) return;
-        $("regelDoc").textContent = ""; regelMsg("Text konnte nicht eingelesen werden: " + err.message + " – „Original“ zeigt die PDF.", true);
-      });
-      return;
-    }
-    // Original: Seiten der PDF
-    $("regelZoomVal").textContent = Math.round(regelZoom * 100) + " %";
-    const host = $("regelPages"); host.textContent = ""; host.style.width = (native ? Math.round(regelZoom * 100) : 100) + "%";
-    let webB64 = null;
-    if (info.cloud) {
-      host.append(el("p", "rd-wait", "Regelwerk wird geladen …"));
-      try { webB64 = await regelCloudPdf(info); } catch (e) { host.textContent = ""; regelMsg(e.message, true); return; }
-      if (job !== regelJob) return; host.textContent = "";
-      if (native) { const li = regelInfo(); if (li) info = { ...info, pages: li.pages }; }
-    }
-    if (!native) {
-      const url = URL.createObjectURL(new Blob([b64bytes(webB64 || regelB64())], { type: "application/pdf" }));
-      const a = el("a", "btn ghost", "PDF in neuem Tab öffnen"); a.href = url; a.target = "_blank"; a.rel = "noopener"; a.style.alignSelf = "center";
-      const f = el("iframe"); f.title = "Regelwerk"; f.src = url; host.append(a, f); return;
-    }
-    const cw = Math.max(280, $("regelView").clientWidth - 16 || 360);
-    const px = Math.min(2400, Math.round(cw * regelZoom * Math.min(3, window.devicePixelRatio || 2)));
-    const pages = [];
-    for (let i = 0; i < info.pages; i++) {
-      const pg = el("div", "pg wait"); pg.style.aspectRatio = "1 / 1.414";
-      pg.append(el("span", "no", `${i + 1} / ${info.pages}`)); host.append(pg); pages.push(pg);
-    }
-    let i = 0;
-    const next = () => {   // Seite für Seite zeichnen, damit die App bedienbar bleibt
-      if (job !== regelJob || i >= pages.length) return;
-      const b64 = app.rulesPage(i, px), pg = pages[i++];
-      if (b64) { const img = el("img"); img.alt = `Regelwerk Seite ${i}`; img.src = "data:image/png;base64," + b64; pg.style.aspectRatio = ""; pg.prepend(img); }
-      pg.classList.remove("wait"); setTimeout(next, 0);
-    };
-    setTimeout(next, 30);
+    regelBlocks = d && blockChars(d.blocks) > 0 ? d.blocks : null;
+    $("regelInfo").textContent = regelBlocks && d.updated ? "Stand " + fmtDate(new Date(d.updated).toISOString().slice(0, 10)) : "";
+    $("regelText").hidden = !regelBlocks; $("regelPdf").hidden = !regelBlocks; $("regelEmpty").hidden = !!regelBlocks;
+    regelData = d;
+    if (regelBlocks) regelRender();
   }
+  let regelData = null;
+
+  // PDF einlesen (nur Verwalter): ersetzt den Text
   $("regelUpload").onclick = () => $("regelFile").click();
   $("regelFile").onchange = e => {
     const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
     if (!/pdf$/i.test(f.type) && !/\.pdf$/i.test(f.name)) return regelMsg("Bitte eine PDF-Datei wählen.", true);
-    regelMsg("PDF wird übernommen …");
+    if (regelBlocks && !confirm("Der bisherige Text des Regelwerks wird durch den Inhalt der PDF ersetzt. Fortfahren?")) return;
+    regelMsg("PDF wird eingelesen …");
     const rd = new FileReader();
     rd.onload = () => {
       const b64 = String(rd.result).split(",")[1] || "";
-      if (cloudR()) {
-        if (!/^JVBER/.test(b64)) return regelMsg("Die Datei ist keine gültige PDF.", true);
-        regelMsg("Regelwerk wird eingelesen und für alle gespeichert …");
-        regelSaveCloud(b64, f.name).then(() => { regelMsg(`Regelwerk aktualisiert (${f.name}).`); regelBlocks = null; regelMode = "text"; try { localStorage.setItem("ksv-regelmode", "text"); } catch {} regelShow(true); })
-          .catch(e => regelMsg("Speichern fehlgeschlagen: " + (e.message || e), true));
-        return;
-      }
-      let r = "error";
-      if (native) r = app.saveRules(b64);
-      else { try { localStorage.setItem("ksv-regelwerk", b64); localStorage.setItem("ksv-regelwerk-t", String(Date.now())); r = "ok"; } catch { r = "error:Die PDF ist zu groß für den Browser-Speicher."; } }
-      if (r === "ok") { regelMsg(`Regelwerk aktualisiert (${f.name}).`); regelBlocks = null; regelMode = "text"; try { localStorage.setItem("ksv-regelmode", "text"); } catch {} regelShow(true); }
-      else regelMsg(r === "notpdf" ? "Die Datei ist keine gültige PDF." : "Speichern fehlgeschlagen" + (r.startsWith("error:") && r.length > 6 ? ": " + r.slice(6) : "."), true);
+      if (!/^JVBER/.test(b64)) return regelMsg("Die Datei ist keine gültige PDF.", true);
+      regelExtract(b64bytes(b64)).then(blocks => {
+        if (blockChars(blocks) < 40) throw new Error("Die PDF enthält keinen lesbaren Text (vermutlich eingescannt). Bitte den Text über „Bearbeiten“ erfassen.");
+        return regelStore(blocks, f.name, regelExtract.pages);
+      }).then(() => { regelMsg(`Regelwerk aus „${f.name}“ übernommen.`); regelShow(true); })
+        .catch(err => regelMsg(err.message || String(err), true));
     };
     rd.onerror = () => regelMsg("Die Datei konnte nicht gelesen werden.", true);
     rd.readAsDataURL(f);
   };
-  $("regelMode").querySelectorAll("button").forEach(b => b.onclick = () => {
-    regelMode = b.dataset.m; try { localStorage.setItem("ksv-regelmode", regelMode); } catch {} regelMsg(""); regelShow(true);
-  });
   let regelQT = null;
   $("regelQ").oninput = () => { clearTimeout(regelQT); regelQT = setTimeout(regelRender, 200); };
-  $("regelZoom").querySelectorAll("button").forEach(b => b.onclick = () => {
-    const d = +b.dataset.z; regelZoom = d === 0 ? 1 : Math.min(3, Math.max(1, Math.round((regelZoom + d * 0.5) * 2) / 2));
-    try { localStorage.setItem("ksv-regelzoom", String(regelZoom)); } catch {}
-    regelShow(true);
-  });
+
+  // ---------- Regelwerk bearbeiten (Verwalter): Text mit einfachen Kennzeichen ----------
+  const segsToTxt = segs => segs.map(s => s.b ? `**${s.t}**` : s.t).join("");
+  const txtToSegs = t => { const out = []; let last = 0; t.replace(/\*\*(.+?)\*\*/g, (m, inner, i) => { if (i > last) out.push({ t: t.slice(last, i), b: false }); out.push({ t: inner, b: true }); last = i + m.length; return m; }); if (last < t.length) out.push({ t: t.slice(last), b: false }); return out.length ? out : [{ t: "", b: false }]; };
+  function blocksToText(blocks) {
+    const out = []; let prev = null;
+    (blocks || []).forEach(b => {
+      const t = segsToTxt(b.segs);
+      const line = b.type === "h1" ? "# " + t : b.type === "sub" ? "> " + t : b.type === "h2" ? "## " + t : b.type === "h3" ? "### " + t
+        : b.type === "li" ? (b.mark ? b.mark + " " : "- ") + t : b.num ? b.num + " " + t : t;
+      if (prev && !(prev === "li" && b.type === "li")) out.push("");
+      out.push(line); prev = b.type;
+    });
+    return out.join("\n");
+  }
+  function textToBlocks(txt) {
+    const blocks = []; let cur = null;
+    const push = b => { blocks.push(b); cur = b; };
+    txt.replace(/\r/g, "").split("\n").forEach(raw => {
+      const l = raw.trim(); let m;
+      if (!l) { cur = null; return; }
+      if ((m = l.match(/^###\s+(.*)$/))) push({ type: "h3", segs: txtToSegs(m[1]) }), cur = null;
+      else if ((m = l.match(/^##\s+(.*)$/))) push({ type: "h2", segs: txtToSegs(m[1]) }), cur = null;
+      else if ((m = l.match(/^#\s+(.*)$/))) push({ type: "h1", segs: txtToSegs(m[1]) }), cur = null;
+      else if ((m = l.match(/^>\s*(.*)$/))) push({ type: "sub", segs: txtToSegs(m[1]) }), cur = null;
+      else if ((m = l.match(/^\((\d+[a-z]?)\)\s+(.*)$/))) push({ type: "p", num: "(" + m[1] + ")", segs: txtToSegs(m[2]) });
+      else if ((m = l.match(/^[-•*]\s+(.*)$/))) push({ type: "li", mark: "", segs: txtToSegs(m[1]) });
+      else if ((m = l.match(/^([a-z]\)|\d+\.)\s+(.*)$/i))) push({ type: "li", mark: m[1], segs: txtToSegs(m[2]) });
+      else if (cur && (cur.type === "p" || cur.type === "li")) { const s = txtToSegs(" " + l); s.forEach(x => { const z = cur.segs[cur.segs.length - 1]; if (z && z.b === x.b) z.t += x.t; else cur.segs.push(x); }); }
+      else push({ type: "p", segs: txtToSegs(l) });
+    });
+    return blocks;
+  }
+  function regelEdOpen() {
+    $("regelEdText").value = regelBlocks ? blocksToText(regelBlocks) : "# Statuten des KSV 08/15\n\n### § 1 Name und Zweck\n\n(1) ";
+    $("regelEdMsg").textContent = ""; $("regelEd").hidden = false; document.body.style.overflow = "hidden";
+    setTimeout(() => $("regelEdText").focus(), 0);
+  }
+  function regelEdClose() { $("regelEd").hidden = true; if (!detailPid && $("em").hidden) document.body.style.overflow = ""; }
+  $("regelEdit").onclick = regelEdOpen;
+  $("regelEdClose").onclick = regelEdClose; $("regelEdCancel").onclick = regelEdClose;
+  $("regelEdSave").onclick = () => {
+    const blocks = textToBlocks($("regelEdText").value);
+    if (!blockChars(blocks)) { $("regelEdMsg").textContent = "Der Text ist leer."; return; }
+    $("regelEdSave").disabled = true; $("regelEdMsg").textContent = "Speichere …";
+    regelStore(blocks, (regelData && regelData.name) || "Regelwerk", 0)
+      .then(() => { regelEdClose(); regelMsg("Regelwerk gespeichert."); regelShow(true); })
+      .catch(e => { $("regelEdMsg").textContent = "Speichern fehlgeschlagen: " + (e.message || e.code); })
+      .finally(() => { $("regelEdSave").disabled = false; });
+  };
+
+  // ---------- Regelwerk als PDF (Gestaltung wie die Statuten: Titel, Paragraphen, Absätze, Seitenzahlen) ----------
+  function buildRegelPdf(blocks, stand) {
+    const pdf = new Pdf(), M = 62, CW = pdf.W - 2 * M, BOTTOM = pdf.H - 64, LH = 1.42;
+    pdf.img = logoJpeg();
+    let y = 50;
+    const newPage = () => { pdf.addPage(); y = 60; };
+    const ensure = h => { if (y + h > BOTTOM) newPage(); };
+    const wrap = (segs, size, width, boldAll) => {
+      const lines = []; let line = [], w = 0;
+      const sp = b => textW(" ", size, b);
+      segs.forEach(s => s.t.split(/(\s+)/).forEach(tok => {
+        if (!tok) return; const b = boldAll || s.b;
+        if (/^\s+$/.test(tok)) { if (line.length) { line.push({ t: " ", b, w: sp(b) }); w += sp(b); } return; }
+        const ww = textW(tok, size, b);
+        if (w + ww > width && line.length) { while (line.length && line[line.length - 1].t === " ") w -= line.pop().w; lines.push(line); line = []; w = 0; }
+        line.push({ t: tok, b, w: ww }); w += ww;
+      }));
+      while (line.length && line[line.length - 1].t === " ") line.pop();
+      if (line.length) lines.push(line);
+      return lines;
+    };
+    const draw = (segs, o) => {
+      const size = o.size || 10.5, x = o.x ?? M, width = o.width ?? CW, lines = wrap(segs, size, width, o.bold), lh = size * LH;
+      lines.forEach((l, i) => {
+        ensure(lh);
+        const lw = l.reduce((a, c) => a + c.w, 0); let xx = o.align === "center" ? M + (CW - lw) / 2 : x;
+        if (i === 0 && o.label) pdf.text(o.labelX, y + size, o.label, { size, bold: !!o.labelBold, color: o.labelColor || PC.ink });
+        l.forEach(c => { if (c.t !== " ") pdf.text(xx, y + size, c.t, { size, bold: c.b, color: o.color || PC.ink }); xx += c.w; });
+        y += lh;
+      });
+    };
+    if (pdf.img) { const w = 52, h = w * pdf.img.h / pdf.img.w; pdf.image(pdf.W / 2 - w / 2, y, w, h); y += h + 14; }
+    let first = true;
+    blocks.forEach((b, k) => {
+      const next = blocks[k + 1];
+      if (b.type === "h1") { draw(b.segs, { size: 18, bold: true, align: "center" }); y += 4; }
+      else if (b.type === "sub") { draw(b.segs, { size: 10.5, align: "center", color: PC.muted }); y += 10; }
+      else if (b.type === "h2") { y += first ? 0 : 12; ensure(60); draw(b.segs, { size: 13, bold: true }); pdf.line(M, y + 1, pdf.W - M, y + 1, PC.gold, 0.8); y += 8; }
+      else if (b.type === "h3") { y += first ? 0 : 10; ensure(50); draw(b.segs, { size: 11.5, bold: true }); y += 3; }
+      else if (b.type === "li") { draw(b.segs, { size: 10.5, x: M + 30, width: CW - 30, label: b.mark || "•", labelX: M + 14, labelBold: !!b.mark, labelColor: b.mark ? PC.ink : PC.gold }); y += next && next.type === "li" ? 1 : 6; }
+      else if (b.num) { draw(b.segs, { size: 10.5, x: M + 26, width: CW - 26, label: b.num, labelX: M }); y += 6; }
+      else { draw(b.segs, { size: 10.5 }); y += 6; }
+      first = false;
+    });
+    // Fußzeile mit Stand und Seitenzahl
+    const n = pdf.pages.length;
+    pdf.pages.forEach((pg, i) => {
+      pdf.cur = pg;
+      pdf.line(M, pdf.H - 44, pdf.W - M, pdf.H - 44, PC.line, 0.6);
+      pdf.text(M, pdf.H - 32, "KSV 08/15 · Regelwerk" + (stand ? " · Stand " + stand : ""), { size: 8, color: PC.muted });
+      pdf.text(pdf.W - M, pdf.H - 32, `Seite ${i + 1} von ${n}`, { size: 8, color: PC.muted, align: "right" });
+    });
+    return pdf.output("KSV 08/15 Regelwerk");
+  }
+  $("regelPdf").onclick = async () => {
+    if (!regelBlocks) return;
+    const b = $("regelPdf"), old = b.textContent; b.disabled = true; b.textContent = "PDF wird erstellt …";
+    try {
+      const iso = regelData && regelData.updated ? new Date(regelData.updated).toISOString().slice(0, 10) : todayIso();
+      const bytes = buildRegelPdf(regelBlocks, fmtDate(iso));
+      const dl = window.claude?.use ? await claude.use("downloads") : null;
+      if (!dl) { regelMsg("PDF-Export ist in dieser Ansicht nicht verfügbar.", true); return; }
+      await dl.save({ filename: `KSV-0815_Regelwerk_${iso}.pdf`, data: bytes });
+      regelMsg("PDF erstellt.");
+    } catch (e) { regelMsg(e?.code === "declined" ? "Export abgebrochen." : "PDF konnte nicht erstellt werden.", e?.code !== "declined"); if (!e?.code) console.error(e); }
+    finally { b.disabled = false; b.textContent = old; }
+  };
   window.__ksvRegelReload = () => { regelShown = false; regelBlocks = null; if (tab === "regel") regelShow(); };
 
   // ---------- Planung: Notizen, Termine, Abstimmungen (jedes Mitglied darf anlegen) ----------
@@ -2899,6 +2982,7 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
   window.__ksvTabBack = () => {
     if (!$("acctMenu").hidden) { menuClose(); return true; }
     if (!$("planEd").hidden) { planEdClose(); return true; }
+    if (!$("regelEd").hidden) { regelEdClose(); return true; }
     if (tab === "stand") return false; goTab(tab === "set" ? prevTab : "stand"); return true;
   };
   showTab(tab, false);

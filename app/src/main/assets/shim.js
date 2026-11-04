@@ -132,7 +132,8 @@
     var sp = store.keys().filter(function (k) { return k.indexOf("spieltage/") === 0; }).sort()
       .map(function (k) { return { id: k.slice(10), data: read(k) }; });
     var rw = null; try { rw = (window.AndroidApp && window.AndroidApp.loadRules) ? (window.AndroidApp.loadRules() || null) : null; } catch (e) { }
-    return { app: "KSV 08/15 Spielbuch", version: 1, exported: new Date().toISOString(), config: read("config/main") || {}, spieltage: sp, regelwerk: rw };
+    var rt = null; try { rt = (JSON.parse(localStorage.getItem("ksv-regelwerk-text") || "null") || {}).blocks || null; } catch (e) { }
+    return { app: "KSV 08/15 Spielbuch", version: 1, exported: new Date().toISOString(), config: read("config/main") || {}, spieltage: sp, regelwerk: rw, regeltext: rt };
   }
   function restore(obj) {
     if (!obj || typeof obj !== "object" || !obj.config || !Array.isArray(obj.spieltage)) throw new Error("Das ist keine Sicherung des Spielbuchs.");
@@ -140,6 +141,10 @@
     store.set("config/main", JSON.stringify(obj.config));
     obj.spieltage.forEach(function (g) { if (g && g.id && g.data) store.set("spieltage/" + g.id, JSON.stringify(g.data)); });
     if (obj.regelwerk && window.AndroidApp && window.AndroidApp.saveRules) { try { window.AndroidApp.saveRules(obj.regelwerk); } catch (e) { } }
+    try {   // Regeltext: übernehmen, sonst aus der eingespielten PDF neu einlesen lassen
+      if (obj.regeltext) localStorage.setItem("ksv-regelwerk-text", JSON.stringify({ blocks: obj.regeltext, updated: Date.now(), name: "Regelwerk" }));
+      else if (obj.regelwerk) localStorage.removeItem("ksv-regelwerk-text");
+    } catch (e) { }
     notifyAll();
     if (window.__ksvRegelReload) window.__ksvRegelReload();
   }

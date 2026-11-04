@@ -200,6 +200,7 @@
     show(function (box) { box.appendChild(h("div", "auth-msg", "Lade …")); });
     var ref = fs.doc("nutzer/" + u.uid);
     unsubMe = ref.onSnapshot(function (snap) {
+      if (!auth.currentUser || auth.currentUser.uid !== u.uid) return;   // Meldung zu einem vorher angemeldeten Konto
       if (!snap.exists) {
         // Erst als Verwalter versuchen: Das erlauben die Regeln in Firebase nur der Verwalter-Adresse.
         // Alle anderen werden abgewiesen und als „wartet auf Freischaltung“ angelegt.
@@ -255,12 +256,13 @@
         },
         save: function (b64, name, blocks, pages) {
           return fs.doc("regelwerk/meta").get().then(function (old) {
-            var n = Math.ceil(b64.length / CHUNK), batch = fs.batch(), oldN = old.exists ? old.data().chunks || 0 : 0;
+            // b64 = null: nur der (bearbeitete) Text wird gespeichert, alte PDF-Teile werden entfernt
+            var n = b64 ? Math.ceil(b64.length / CHUNK) : 0, batch = fs.batch(), oldN = old.exists ? old.data().chunks || 0 : 0;
             for (var i = 0; i < n; i++) batch.set(fs.doc("regelwerk/pdf_" + i), { d: b64.slice(i * CHUNK, (i + 1) * CHUNK) });
             for (var j = n; j < oldN; j++) batch.delete(fs.doc("regelwerk/pdf_" + j));
             var now = Date.now();
             batch.set(fs.doc("regelwerk/text"), { blocks: JSON.parse(JSON.stringify(blocks || [])), updated: now });
-            batch.set(fs.doc("regelwerk/meta"), { name: name || "Regelwerk.pdf", size: Math.round(b64.length * 3 / 4), pages: pages || 0, chunks: n, updated: now, von: me ? me.name : "" });
+            batch.set(fs.doc("regelwerk/meta"), { name: name || "Regelwerk", size: b64 ? Math.round(b64.length * 3 / 4) : JSON.stringify(blocks || []).length, pages: pages || 0, chunks: n, updated: now, von: me ? me.name : "" });
             return batch.commit().then(function () { return now; });
           });
         }
@@ -272,9 +274,10 @@
   window.KSV_BACKUP = {
     canRestore: function () { return !!(me && me.canWrite); },
     dump: function () {
-      return Promise.all([fs.doc("config/main").get(), fs.collection("spieltage").get()]).then(function (r) {
+      return Promise.all([fs.doc("config/main").get(), fs.collection("spieltage").get(), fs.doc("regelwerk/text").get()]).then(function (r) {
         return { app: "KSV 08/15 Spielbuch", version: 1, exported: new Date().toISOString(), config: r[0].exists ? r[0].data() : {},
-          spieltage: r[1].docs.map(function (d) { return { id: d.id, data: d.data() }; }), regelwerk: null };
+          spieltage: r[1].docs.map(function (d) { return { id: d.id, data: d.data() }; }), regelwerk: null,
+          regeltext: r[2].exists ? r[2].data().blocks || null : null };
       });
     },
     restore: function (obj) {
@@ -285,7 +288,9 @@
         cur.docs.forEach(function (d) { if (!keep[d.id]) ops.push(function (b) { b.delete(d.ref); }); });
         ops.push(function (b) { b.set(fs.doc("config/main"), obj.config); });
         obj.spieltage.forEach(function (g) { if (g && g.id && g.data) ops.push(function (b) { b.set(fs.doc("spieltage/" + g.id), g.data); }); });
-        return commitInBatches(ops);
+        return commitInBatches(ops).then(function () {
+          if (obj.regeltext && window.KSV_CLOUD) return window.KSV_CLOUD.regel.save(null, "Regelwerk", obj.regeltext, 0);
+        }).then(function () { if (window.__ksvRegelReload) window.__ksvRegelReload(); });
       });
     }
   };
