@@ -12,6 +12,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.os.Environment;
+import android.provider.CalendarContract;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
@@ -162,6 +163,23 @@ public class MainActivity extends Activity {
                 web.setBackgroundColor(bg);
                 getWindow().getDecorView().setBackgroundColor(bg);
             });
+        }
+
+        /** Öffnet die Kalender-App des Handys mit einem vorausgefüllten Termin (Google, Samsung …). */
+        @JavascriptInterface
+        public String addToCalendar(String title, double beginMs, double endMs, boolean allDay, String location, String description) {
+            Intent i = new Intent(Intent.ACTION_INSERT)
+                    .setData(CalendarContract.Events.CONTENT_URI)
+                    .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, (long) beginMs)
+                    .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, (long) endMs)
+                    .putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, allDay)
+                    .putExtra(CalendarContract.Events.TITLE, title)
+                    .putExtra(CalendarContract.Events.EVENT_LOCATION, location)
+                    .putExtra(CalendarContract.Events.DESCRIPTION, description);
+            runOnUiThread(() -> {
+                try { startActivity(i); } catch (Exception e) { toast("Keine Kalender-App gefunden."); }
+            });
+            return "ok";
         }
 
         // ---------- Regelwerk (PDF) ----------

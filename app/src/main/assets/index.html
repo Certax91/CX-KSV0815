@@ -597,6 +597,12 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
 .pf-opts>.iconbtn{align-self:flex-start}
 .plan-ed .actions{position:sticky;bottom:-14px;background:var(--bg);padding:10px 0 4px;border-top:1px solid var(--line)}
 @media (max-width:420px){.rsvp button{font-size:12px}.pc-cal{width:46px}}
+.pc-cal-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pc-cal-row .cal-btn{display:inline-flex;align-items:center;gap:6px}
+.pc-cal-row .cal-btn::before{content:"";width:14px;height:14px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM4 10h16M9 3v4M15 3v4M12 13v4M10 15h4'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM4 10h16M9 3v4M15 3v4M12 13v4M10 15h4'/%3E%3C/svg%3E") center/contain no-repeat}
+.cal-choices{display:flex;gap:6px;flex-wrap:wrap}
+.cal-choices[hidden]{display:none}
+.cal-choices a.iconbtn{text-decoration:none;color:inherit}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -2672,6 +2678,55 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
     box.append(foot);
     return box;
   }
+  // ---------- Termin in den Kalender übernehmen ----------
+  // App (Android): öffnet die Kalender-App des Handys. Browser: Google Kalender (Link) oder Apple Kalender (.ics).
+  const CAL_STUNDEN = 3;   // angenommene Dauer eines Termins mit Uhrzeit
+  function calTimes(it) {
+    const allDay = !it.zeit, start = new Date(`${it.datum}T${it.zeit || "00:00"}:00`);
+    const end = allDay ? new Date(start.getTime() + 864e5) : new Date(start.getTime() + CAL_STUNDEN * 36e5);
+    return { allDay, start, end };
+  }
+  const calDesc = it => [it.text, "Aus dem KSV 08/15 Spielbuch"].filter(Boolean).join("\n\n");
+  const pad2 = n => String(n).padStart(2, "0");
+  const ymd = d => `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}`;
+  const hms = d => `${pad2(d.getHours())}${pad2(d.getMinutes())}00`;
+  const utc = d => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  function calGoogle(it) {
+    const { allDay, start, end } = calTimes(it);
+    const dates = allDay ? `${ymd(start)}/${ymd(end)}` : `${ymd(start)}T${hms(start)}/${ymd(end)}T${hms(end)}`;
+    const q = new URLSearchParams({ action: "TEMPLATE", text: it.titel || "Termin", dates, details: calDesc(it), location: it.ort || "", ctz: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Berlin" });
+    return "https://calendar.google.com/calendar/render?" + q.toString();
+  }
+  function calIcs(it) {
+    const { allDay, start, end } = calTimes(it), esc = t => String(t || "").replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+    return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//KSV 08/15//Spielbuch//DE", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "BEGIN:VEVENT",
+      `UID:${it.id}@ksv0815`, `DTSTAMP:${utc(new Date())}`,
+      allDay ? `DTSTART;VALUE=DATE:${ymd(start)}` : `DTSTART:${utc(start)}`, allDay ? `DTEND;VALUE=DATE:${ymd(end)}` : `DTEND:${utc(end)}`,
+      `SUMMARY:${esc(it.titel || "Termin")}`, it.ort ? `LOCATION:${esc(it.ort)}` : "", `DESCRIPTION:${esc(calDesc(it))}`,
+      "END:VEVENT", "END:VCALENDAR"].filter(Boolean).join("\r\n") + "\r\n";
+  }
+  function calApple(it) {
+    const ics = calIcs(it), ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if (ios) { location.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics); return; }   // Safari zeigt „Zum Kalender hinzufügen“
+    const a = el("a"); a.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" })); a.download = `KSV-Termin_${it.datum}.ics`;
+    document.body.append(a); a.click(); a.remove();
+  }
+  function planCalRow(it) {
+    const row = el("div", "pc-cal-row");
+    const main = el("button", "iconbtn cal-btn", "In Kalender eintragen"); main.type = "button";
+    if (window.AndroidApp?.addToCalendar) {
+      main.onclick = () => { const { allDay, start, end } = calTimes(it); window.AndroidApp.addToCalendar(it.titel || "Termin", start.getTime(), end.getTime(), allDay, it.ort || "", calDesc(it)); };
+      row.append(main); return row;
+    }
+    const choices = el("div", "cal-choices"); choices.hidden = true;
+    const g = el("a", "iconbtn", "Google Kalender"); g.href = calGoogle(it); g.target = "_blank"; g.rel = "noopener";
+    const ap = el("button", "iconbtn", "Apple / iPhone Kalender"); ap.type = "button"; ap.onclick = () => calApple(it);
+    choices.append(g, ap);
+    main.onclick = () => { choices.hidden = !choices.hidden; main.setAttribute("aria-expanded", String(!choices.hidden)); };
+    main.setAttribute("aria-expanded", "false");
+    row.append(main, choices); return row;
+  }
+
   function planCard(it) {
     const c = el("article", "plan-card t-" + it.typ + (it.geschlossen ? " closed" : ""));
     const head = el("div", "pc-head");
@@ -2691,6 +2746,7 @@ body:not([data-tab="plan"]) #secPlan{display:none!important}
     if (it.text) c.append(el("p", "pc-text", it.text));
     if (it.typ === "termin") c.append(planRsvp(it));
     if (it.typ === "umfrage") c.append(planPoll(it));
+    if (it.typ === "termin" && it.datum) c.append(planCalRow(it));
     const foot = el("div", "pc-foot");
     foot.append(el("span", "msg", `${it.vonName || "?"} · ${stamp(it.erstellt)}${it.geaendert ? " (geändert)" : ""}`));
     if (canEditItem(it)) {
