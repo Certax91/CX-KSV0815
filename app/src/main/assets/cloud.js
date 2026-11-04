@@ -85,8 +85,6 @@
     ".auth .auth-msg.err{color:var(--danger,#b3261e)}",
     ".auth .auth-info{background:var(--surface,#f6f5f2);border:1px solid var(--line,#ccc);border-radius:10px;padding:14px;font-size:15px;line-height:1.5}",
     ".auth .auth-info b{display:block;font-size:16px;margin-bottom:4px}",
-    ".tabbar button.dot .pill{position:relative}",
-    ".tabbar button.dot .pill::after{content:'';position:absolute;top:3px;right:12px;width:9px;height:9px;border-radius:50%;background:var(--danger,#e53935);box-shadow:0 0 0 2px var(--head,#111)}",
     ".konto-row{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;padding:10px 0;border-top:1px solid var(--line,#ccc)}",
     ".konto-row:first-child{border-top:0;padding-top:2px}",
     ".konto-row.wait{background:color-mix(in srgb,var(--gold,#c98a12) 12%,transparent);margin:0 -8px;padding:10px 8px;border-radius:8px}",
@@ -225,6 +223,9 @@
     var canWrite = !!DARF_SCHREIBEN[d.rolle];
     me = { uid: u.uid, email: u.email, name: d.name || "", rolle: d.rolle, spielerId: d.spielerId || null, canWrite: canWrite, admin: d.rolle === "admin" };
     window.KSV_ME = me;
+    window.KSV_LOGOUT = function () { auth.signOut(); };
+    document.body.classList.add("cloud");
+    document.body.classList.toggle("admin", me.admin);
     document.body.classList.toggle("ro", !canWrite);
     window.KSV_CLOUD = cloudApi();
     resolveReady({
@@ -304,7 +305,7 @@
     if (head && head.nextSibling) settings.insertBefore(grid, head.nextSibling); else settings.appendChild(grid);
 
     // Eigenes Konto
-    var acc = h("div", "field"); acc.appendChild(h("span", "label", "Dein Konto"));
+    var acc = h("div", "field set-keep"); acc.appendChild(h("span", "label", "Dein Konto"));
     var line = h("div", "konto-me");
     line.appendChild(h("b", null, me.name || me.email));
     line.appendChild(h("span", "tag", ROLLEN[me.rolle] || me.rolle));
@@ -358,7 +359,9 @@
         }));
         row.appendChild(ctl); list.appendChild(row);
       });
-      var tb = document.querySelector('.tabbar button[data-tab="set"]'); if (tb) tb.classList.toggle("dot", waiting > 0);
+      var ab = document.getElementById("acctBtn"), sb = document.getElementById("setBadge");
+      if (ab) ab.classList.toggle("dot", waiting > 0);
+      if (sb) { sb.hidden = !waiting; sb.textContent = String(waiting); }
     }
     fs.collection("nutzer").onSnapshot(function (s) {
       users = s.docs.map(function (d) { return { id: d.id, d: d.data() }; }); renderUsers();

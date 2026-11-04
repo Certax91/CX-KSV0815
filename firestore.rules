@@ -13,12 +13,24 @@ service cloud.firestore {
     function darfSchreiben() { return verwalterMail() || rolle() in ['schreiben', 'admin']; }
     function istVerwalter() { return verwalterMail() || rolle() == 'admin'; }
 
-    // Spielbuch: Einstellungen, Spieltage, Regelwerk
     match /config/{id}    { allow read: if darfLesen(); allow write: if darfSchreiben(); }
     match /spieltage/{id} { allow read: if darfLesen(); allow write: if darfSchreiben(); }
     match /regelwerk/{id} { allow read: if darfLesen(); allow write: if darfSchreiben(); }
 
-    // Konten: jeder sieht sein eigenes; registrieren nur als „warten“; Rechte vergibt der Verwalter
+    match /planung/{id} {
+      allow read: if darfLesen();
+      allow create: if darfLesen() && request.resource.data.von == request.auth.uid;
+      allow update: if darfLesen() && (resource.data.von == request.auth.uid || istVerwalter())
+        && request.resource.data.von == resource.data.von;
+      allow delete: if darfLesen() && (resource.data.von == request.auth.uid || istVerwalter());
+      match /stimmen/{uid} {
+        allow read: if darfLesen();
+        allow create, update: if darfLesen() && request.auth.uid == uid;
+        allow delete: if darfLesen() && (request.auth.uid == uid || istVerwalter()
+          || get(/databases/$(database)/documents/planung/$(id)).data.von == request.auth.uid);
+      }
+    }
+
     match /nutzer/{uid} {
       allow read: if (request.auth != null && request.auth.uid == uid) || istVerwalter();
       allow create: if request.auth != null && request.auth.uid == uid

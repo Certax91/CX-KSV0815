@@ -501,6 +501,102 @@ section.settings .setgrid>.field{background:var(--surface);border:1px solid var(
 .pcard.me{box-shadow:0 0 0 2px var(--ink) inset}
 .c-du{margin-left:6px;font-size:10px;font-weight:700;border-radius:999px;padding:1px 6px;background:var(--ink);color:var(--bg);vertical-align:2px}
 #book thead th.me{color:var(--gold)}
+/* ---------- Kopfzeile mit Konto-Menü ---------- */
+.club .hdr-act{margin-left:auto}
+.acct{position:relative}
+.acct-btn{position:relative;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}
+.acct-btn svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.acct-btn .ini{display:none;font-family:var(--f-num);font-weight:700;font-size:16px;letter-spacing:.02em}
+.acct-btn.has-ini{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.acct-btn.has-ini svg{display:none} .acct-btn.has-ini .ini{display:block}
+.acct-btn[aria-expanded="true"]{box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 45%,transparent)}
+.acct-btn.dot::after,.tabbar button.dot .pill::after{content:"";position:absolute;width:10px;height:10px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 2px var(--bg)}
+.acct-btn.dot::after{top:-1px;right:-1px}
+.tabbar button.dot .pill{position:relative}
+.tabbar button.dot .pill::after{top:3px;right:12px;box-shadow:0 0 0 2px var(--head)}
+.acct-menu{position:absolute;right:0;top:calc(100% + 8px);z-index:60;min-width:220px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.22);padding:6px;display:flex;flex-direction:column}
+.acct-menu[hidden]{display:none}
+.acct-menu .am-head{padding:8px 10px 10px;border-bottom:1px solid var(--line);margin-bottom:4px;display:flex;flex-direction:column}
+.acct-menu .am-head b{font-size:15px} .acct-menu .am-head span{font-size:12px;color:var(--muted)}
+.acct-menu button{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;border:0;background:none;color:inherit;font:inherit;font-size:15px;font-weight:600;padding:10px 10px;border-radius:8px;cursor:pointer}
+.acct-menu button:hover,.acct-menu button:focus-visible{background:var(--surface)}
+.acct-menu button[hidden]{display:none}
+.acct-menu .am-sep{height:1px;background:var(--line);margin:4px 0}
+.acct-menu .am-out{color:var(--danger)}
+.am-badge{min-width:20px;height:20px;border-radius:10px;background:var(--danger);color:#fff;font-size:11px;font-weight:700;display:inline-grid;place-items:center;padding:0 6px}
+#settings .sechead{align-items:center}
+#settings #setDone{margin-left:auto}
+/* Einstellungen: Nur Verwalter sehen alles, alle anderen nur Konto und Darstellung */
+body.cloud:not(.admin) #settings .setgrid > .field:not(.set-keep){display:none}
+body.cloud:not(.admin) #settings .setgrid:not(:has(> .field.set-keep)){display:none}
+body[data-tab="plan"] .toolbar,body[data-tab="plan"] .fab{display:none}
+
+/* ---------- Planung ---------- */
+#secPlan{display:flex;flex-direction:column;gap:12px}
+body:not([data-tab="plan"]) #secPlan{display:none!important}
+.plan-new{display:flex;gap:8px;flex-wrap:wrap}
+.plan-new .btn{padding:7px 12px;font-size:14px}
+.plan-filter{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.plan-filter .chip{flex:none}
+.plan-list{display:flex;flex-direction:column;gap:10px}
+.plan-h{font-family:var(--f-display);font-weight:400;font-size:17px;margin:8px 0 0;letter-spacing:.02em}
+.plan-card{border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:12px;display:flex;flex-direction:column;gap:8px}
+.plan-card.t-termin{border-left:4px solid var(--gold)}
+.plan-card.t-umfrage{border-left:4px solid var(--r4)}
+.plan-card.t-notiz{border-left:4px solid var(--silver);background:var(--surface)}
+.plan-card.closed{opacity:.8}
+.pc-head{display:flex;gap:12px;align-items:flex-start}
+.pc-cal{flex:none;width:50px;border-radius:8px;overflow:hidden;border:1px solid var(--line);text-align:center;display:flex;flex-direction:column;background:var(--bg)}
+.pc-cal .w{background:var(--ink);color:var(--bg);font-size:11px;font-weight:700;padding:1px 0}
+.pc-cal .d{font-family:var(--f-num);font-weight:700;font-size:22px;line-height:1.1}
+.pc-cal .m{font-size:11px;color:var(--muted);padding-bottom:2px}
+.pc-tt{display:flex;flex-direction:column;min-width:0;gap:1px}
+.pc-tt b{font-size:16px;line-height:1.25}
+.pc-type{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.pc-meta{font-size:13px;color:var(--muted)}
+.pc-text{margin:0;white-space:pre-wrap;font-size:14px;line-height:1.5}
+.pc-foot{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between}
+.pc-foot .msg{font-size:12px}
+.pc-act{display:flex;gap:6px;flex-wrap:wrap}
+.pc-act .iconbtn{padding:4px 9px;font-size:12px}
+.iconbtn.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,var(--line))}
+.rsvp{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.rsvp button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:7px 4px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;display:flex;gap:6px;justify-content:center;align-items:center}
+.rsvp button .n{font-family:var(--f-num);font-weight:700;background:var(--bg);border-radius:9px;padding:0 6px;font-size:12px}
+.rsvp button.a-ja[aria-pressed="true"]{background:#2e7d32;border-color:#2e7d32;color:#fff}
+.rsvp button.a-vielleicht[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#111}
+.rsvp button.a-nein[aria-pressed="true"]{background:var(--danger);border-color:var(--danger);color:#fff}
+.rsvp button[aria-pressed="true"] .n{background:rgba(255,255,255,.25);color:inherit}
+.pc-names,.po-names{font-size:12px;color:var(--muted);line-height:1.4}
+.pc-poll{display:flex;flex-direction:column;gap:8px}
+.po-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 8px;align-items:center;padding:6px 8px;border-radius:8px;background:var(--surface)}
+.po-row.best{box-shadow:inset 0 0 0 2px var(--gold)}
+.po-lab{display:flex;flex-direction:column;min-width:0;font-size:14px;font-weight:600}
+.po-lab small{font-weight:400;color:var(--muted);font-size:12px}
+.po-cnt{font-family:var(--f-num);font-weight:700;font-size:15px}
+.po-ctl{display:flex;gap:4px}
+.po-b{width:34px;height:30px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--muted);font-size:15px;font-weight:700;cursor:pointer;padding:0}
+.po-b.a-ja[aria-pressed="true"]{background:#2e7d32;border-color:#2e7d32;color:#fff}
+.po-b.a-vielleicht[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#111}
+.po-b.a-nein[aria-pressed="true"]{background:var(--danger);border-color:var(--danger);color:#fff}
+.po-b:disabled{opacity:.5;cursor:default}
+.po-bar{grid-column:1/-1;height:5px;border-radius:3px;background:var(--line);overflow:hidden;display:flex}
+.po-bar .y{background:#2e7d32} .po-bar .m{background:var(--gold)}
+.po-names{grid-column:1/-1}
+.po-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.plan-past summary{cursor:pointer;font-weight:700;color:var(--muted);padding:6px 0}
+.plan-past[open]{display:flex;flex-direction:column;gap:10px}
+.plan-ed{max-width:560px}
+.plan-form{display:flex;flex-direction:column;gap:10px}
+.plan-form .field input,.plan-form textarea{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;padding:8px 10px;font:inherit;font-size:15px}
+.plan-form textarea{resize:vertical;min-height:70px}
+.pf-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pf-opts{display:flex;flex-direction:column;gap:6px}
+.pf-opt{display:flex;gap:6px;align-items:center}
+.pf-opt input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;padding:7px 8px;font:inherit;font-size:15px}
+.pf-opts>.iconbtn{align-self:flex-start}
+.plan-ed .actions{position:sticky;bottom:-14px;background:var(--bg);padding:10px 0 4px;border-top:1px solid var(--line)}
+@media (max-width:420px){.rsvp button{font-size:12px}.pc-cal{width:46px}}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -541,6 +637,14 @@ section.settings .setgrid>.field{background:var(--surface);border:1px solid var(
   </div>
 </div>
 
+<div class="pd" id="planEd" hidden role="dialog" aria-modal="true" aria-labelledby="planEdTitle">
+  <div class="pd-panel plan-ed">
+    <div class="pd-head"><h2 id="planEdTitle">Neu</h2><button class="iconbtn" id="planEdClose" type="button">Schließen</button></div>
+    <div class="plan-form" id="planEdBody"></div>
+    <div class="actions"><button class="btn" id="planEdSave" type="button">Speichern</button><button class="btn ghost" id="planEdCancel" type="button">Abbrechen</button><span class="msg" id="planEdMsg"></span></div>
+  </div>
+</div>
+
 <div class="pd" id="pd" hidden role="dialog" aria-modal="true" aria-labelledby="pdName">
   <div class="pd-panel">
     <div class="pd-head">
@@ -569,7 +673,20 @@ section.settings .setgrid>.field{background:var(--surface);border:1px solid var(
     <div class="sp">
       <h1>KSV 08/15</h1>
     </div>
-    <div class="hdr-act"><div class="status" id="status" aria-live="polite" hidden>Verbinde …</div><button class="btn ghost" id="meBtn" type="button" hidden title="Meine Auswertung">Ich</button><button class="btn ghost" id="pdfBtn" type="button" title="Bericht für den gewählten Zeitraum als PDF">PDF-Bericht</button></div>
+    <div class="hdr-act"><div class="status" id="status" aria-live="polite" hidden>Verbinde …</div>
+      <div class="acct">
+        <button class="acct-btn" id="acctBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="acctMenu" aria-label="Konto und Einstellungen">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 19.5c1.2-3.6 4-5.4 7.2-5.4s6 1.8 7.2 5.4"/></svg><span class="ini" id="acctIni"></span>
+        </button>
+        <div class="acct-menu" id="acctMenu" role="menu" hidden>
+          <div class="am-head" id="amHead" hidden></div>
+          <button type="button" role="menuitem" id="meBtn" hidden>Meine Auswertung</button>
+          <button type="button" role="menuitem" id="pdfBtn" title="Bericht für den gewählten Zeitraum als PDF">PDF-Bericht</button>
+          <button type="button" role="menuitem" id="setBtn">Einstellungen<span class="am-badge" id="setBadge" hidden></span></button>
+          <div class="am-sep" id="amSep" hidden></div>
+          <button type="button" role="menuitem" id="logoutBtn" class="am-out" hidden>Abmelden</button>
+        </div>
+      </div></div>
   </header>
 
   <div class="toolbar" role="group" aria-label="Zeitraum und Anzeige">
@@ -670,8 +787,25 @@ section.settings .setgrid>.field{background:var(--surface);border:1px solid var(
     <div class="regel-empty" id="regelEmpty" hidden><strong>Noch kein Regelwerk hinterlegt</strong>Tippe auf „PDF einfügen“ und wähle die PDF mit den Statuten. Der Text wird eingelesen und hier im Design der App angezeigt.</div>
   </section>
 
+
+  <section id="secPlan" aria-labelledby="h-plan">
+    <div class="sechead"><h2 id="h-plan">Planung</h2><span class="msg" id="planMsg" aria-live="polite"></span></div>
+    <div class="plan-new" role="group" aria-label="Neu anlegen">
+      <button class="btn" type="button" data-new="termin">+ Termin</button>
+      <button class="btn" type="button" data-new="umfrage">+ Abstimmung</button>
+      <button class="btn ghost" type="button" data-new="notiz">+ Notiz</button>
+    </div>
+    <div class="chips plan-filter" id="planFilter" role="group" aria-label="Anzeigen">
+      <button type="button" class="chip" data-f="alle">Alle</button>
+      <button type="button" class="chip" data-f="termine">Termine</button>
+      <button type="button" class="chip" data-f="umfragen">Abstimmungen</button>
+      <button type="button" class="chip" data-f="notizen">Notizen</button>
+    </div>
+    <div class="plan-list" id="planList"></div>
+  </section>
+
   <section class="settings" id="settings" aria-labelledby="h-set">
-    <div class="sechead"><h2 id="h-set">Einstellungen</h2></div>
+    <div class="sechead"><h2 id="h-set">Einstellungen</h2><button class="iconbtn" id="setDone" type="button">Fertig</button></div>
     <div class="setgrid">
       <div class="field">
         <span class="label">Spieler</span>
@@ -682,7 +816,7 @@ section.settings .setgrid>.field{background:var(--surface);border:1px solid var(
         </div>
         
       </div>
-      <div class="field">
+      <div class="field set-keep">
         <span class="label">Darstellung</span>
         <div class="seg" role="group" aria-label="Darstellung" id="themeSeg">
           <button type="button" data-theme="auto">Automatisch</button>
@@ -729,7 +863,7 @@ section.settings .setgrid>.field{background:var(--surface);border:1px solid var(
     <button type="button" data-tab="book"><span class="pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5zM5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3M9 7h6M9 10.5h6"/></svg></span><span class="lbl">Spielbuch</span></button>
     <button type="button" data-tab="stat"><span class="pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-4M12 16V7M17 16V9"/></svg></span><span class="lbl">Statistik</span></button>
     <button type="button" data-tab="regel"><span class="pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v4h4"/><path d="M13.2 10.3c-.4-.6-1.1-.9-1.8-.8-.9.1-1.4.8-1.2 1.5.3 1.1 3.2 1.2 3.4 2.6.1.8-.6 1.4-1.5 1.5"/><path d="M10.8 13.1c-.6.3-1 .9-.8 1.6.3 1.1 3.2 1.2 3.4 2.6.1.8-.6 1.5-1.6 1.5-.8 0-1.5-.4-1.8-1"/></svg></span><span class="lbl">Regeln</span></button>
-    <button type="button" data-tab="set" aria-label="Einstellungen"><span class="pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></span><span class="lbl">Optionen</span></button>
+    <button type="button" data-tab="plan"><span class="pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM4 10h16M9 3v4M15 3v4"/><path d="M9 15l2 2 4-4"/></svg></span><span class="lbl">Planung</span></button>
   </div>
 </nav>
 <button class="fab" id="newGameBtn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Spieltag erfassen</button>
@@ -881,7 +1015,27 @@ section.settings .setgrid>.field{background:var(--surface);border:1px solid var(
   // Vereins-Version: mit dem Konto verknüpfter Spieler (siehe cloud.js)
   const myPid = () => window.KSV_ME?.spielerId || null;
   $("meBtn").onclick = () => { if (myPid()) openDetail(myPid()); };
-  window.__ksvMeReady = () => { $("meBtn").hidden = !myPid(); render(); };
+  window.__ksvMeReady = me => {
+    $("meBtn").hidden = !myPid();
+    if (me) {
+      const nm = me.name || me.email || "";
+      $("acctIni").textContent = nm.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map(x => x[0].toUpperCase()).join("");
+      $("acctBtn").classList.add("has-ini");
+      const h = $("amHead"); h.textContent = ""; h.append(el("b", null, nm), el("span", null, { lesen: "Nur ansehen", schreiben: "Darf eintragen", admin: "Verwalter" }[me.rolle] || ""));
+      h.hidden = false; $("logoutBtn").hidden = false; $("amSep").hidden = false;
+    }
+    render(); planStart();
+  };
+  // Konto-Menü oben rechts
+  function menuOpen() { $("acctMenu").hidden = false; $("acctBtn").setAttribute("aria-expanded", "true"); setTimeout(() => $("acctMenu").querySelector("button:not([hidden])")?.focus(), 0); }
+  function menuClose() { $("acctMenu").hidden = true; $("acctBtn").setAttribute("aria-expanded", "false"); }
+  $("acctBtn").onclick = e => { e.stopPropagation(); $("acctMenu").hidden ? menuOpen() : menuClose(); };
+  document.addEventListener("click", e => { if (!$("acctMenu").hidden && !e.target.closest(".acct")) menuClose(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("acctMenu").hidden) menuClose(); });
+  $("acctMenu").addEventListener("click", e => { if (e.target.closest("button")) menuClose(); });
+  $("setBtn").onclick = () => goTab("set");
+  $("logoutBtn").onclick = () => { if (window.KSV_LOGOUT) window.KSV_LOGOUT(); };
+  $("setDone").onclick = () => goTab(prevTab && prevTab !== "set" ? prevTab : "stand");
   function renderStandings() {
     const list = inSeason(), st = stats(list).filter(s => s.act || !s.p.hidden);
     const box = $("standings"); box.textContent = "";
@@ -2423,14 +2577,240 @@ section.settings .setgrid>.field{background:var(--surface);border:1px solid var(
   });
   window.__ksvRegelReload = () => { regelShown = false; regelBlocks = null; if (tab === "regel") regelShow(); };
 
+  // ---------- Planung: Notizen, Termine, Abstimmungen (jedes Mitglied darf anlegen) ----------
+  // Einträge: Sammlung „planung“; Stimmen/Zusagen je Eintrag in „planung/{id}/stimmen/{Konto}“.
+  const ME = () => window.KSV_ME || { uid: "local", name: "Ich", admin: true, local: true };
+  const myName = () => { const p = cfg.players.find(x => x.id === myPid()); return p ? p.name : (ME().name || "Ich"); };
+  const WT = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"], MON = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+  const wdate = iso => { const d = new Date(iso + "T12:00:00"); return `${WT[d.getDay()]}, ${fmtDate(iso)}`; };
+  const stamp = ms => { if (!ms) return ""; const d = new Date(ms); return fmtDate(d.toISOString().slice(0, 10)); };
+  const canEditItem = it => ME().admin || it.von === ME().uid;
+  let planItems = [], planVotes = {}, planSubs = {}, planStarted = false, planFilter = "alle";
+  try { planFilter = localStorage.getItem("ksv-planfilter") || "alle"; } catch {}
+  const planMsg = (t, err) => { $("planMsg").textContent = t || ""; $("planMsg").classList.toggle("err", !!err); };
+  function planStart() {
+    if (planStarted || !db) return; planStarted = true;
+    db.collection("planung").onSnapshot(s => {
+      planItems = s.docs.map(d => ({ id: d.id, ...d.data() }));
+      planItems.forEach(it => {
+        if ((it.typ === "termin" || it.typ === "umfrage") && !planSubs[it.id])
+          planSubs[it.id] = db.collection("planung").doc(it.id).collection("stimmen").onSnapshot(v => { planVotes[it.id] = v.docs.map(d => ({ uid: d.id, ...d.data() })); if (tab === "plan") planRender(); }, () => {});
+      });
+      if (tab === "plan") { planSeen(); planRender(); } else planBadge();
+    }, e => planMsg("Planung nicht verfügbar: " + (e.message || e.code), true));
+  }
+  // roter Punkt an „Planung“, wenn andere etwas Neues angelegt oder geändert haben
+  function planBadge() {
+    let seen = 0; try { seen = +localStorage.getItem("ksv-plan-seen") || 0; } catch {}
+    const neu = planItems.some(it => (it.geaendert || it.erstellt || 0) > seen && it.von !== ME().uid);
+    document.querySelector('.tabbar button[data-tab="plan"]')?.classList.toggle("dot", neu && tab !== "plan");
+  }
+  function planSeen() { try { localStorage.setItem("ksv-plan-seen", String(Date.now())); } catch {} planBadge(); }
+
+  function planVote(it, data) {
+    const ref = db.collection("planung").doc(it.id).collection("stimmen").doc(ME().uid);
+    (data ? ref.set({ ...data, name: myName(), zeit: Date.now() }) : ref.delete()).catch(e => planMsg("Stimme konnte nicht gespeichert werden: " + (e.message || e.code), true));
+  }
+  const ANS = [["ja", "Dabei"], ["vielleicht", "Vielleicht"], ["nein", "Nicht dabei"]];
+  function planRsvp(it) {
+    const box = el("div", "pc-rsvp"), votes = planVotes[it.id] || [], mine = votes.find(v => v.uid === ME().uid);
+    const row = el("div", "rsvp");
+    ANS.forEach(([k, lab]) => {
+      const n = votes.filter(v => v.antwort === k).length, b = el("button", "a-" + k);
+      b.type = "button"; b.append(lab); if (n) b.append(el("span", "n", String(n)));
+      b.setAttribute("aria-pressed", String(mine?.antwort === k));
+      b.onclick = () => planVote(it, mine?.antwort === k ? null : { antwort: k });
+      row.append(b);
+    });
+    box.append(row);
+    const names = ANS.map(([k, lab]) => { const ns = votes.filter(v => v.antwort === k).map(v => v.name); return ns.length ? `${lab}: ${ns.join(", ")}` : ""; }).filter(Boolean);
+    if (names.length) box.append(el("div", "pc-names", names.join(" · ")));
+    return box;
+  }
+  function planPoll(it) {
+    const box = el("div", "pc-poll"), votes = planVotes[it.id] || [], mine = votes.find(v => v.uid === ME().uid), my = mine?.wahl || {};
+    const opts = it.optionen || [], doodle = it.art === "termin";
+    const cnt = (o, k) => votes.reduce((n, v) => n + (v.wahl?.[o.id] === k ? 1 : 0), 0);
+    const best = Math.max(0, ...opts.map(o => cnt(o, "ja")));
+    const label = o => doodle && o.datum ? wdate(o.datum) + (o.zeit ? `, ${o.zeit} Uhr` : "") : (o.text || "");
+    opts.forEach(o => {
+      const yes = cnt(o, "ja"), mb = cnt(o, "vielleicht"), tot = votes.length || 1;
+      const row = el("div", "po-row" + (best && yes === best ? " best" : ""));
+      const lab = el("div", "po-lab"); lab.append(el("span", null, label(o))); if (doodle && o.text) lab.append(el("small", null, o.text));
+      const num = el("span", "po-cnt", doodle && mb ? `${yes} (+${mb})` : String(yes));
+      const ctl = el("div", "po-ctl");
+      const choices = doodle ? [["ja", "✓", "Passt"], ["vielleicht", "?", "Vielleicht"], ["nein", "✗", "Passt nicht"]] : [["ja", "✓", "Auswählen"]];
+      choices.forEach(([k, sym, title]) => {
+        const b = el("button", "po-b a-" + k, sym); b.type = "button"; b.title = title; b.setAttribute("aria-label", `${title}: ${label(o)}`);
+        b.setAttribute("aria-pressed", String(my[o.id] === k)); b.disabled = !!it.geschlossen;
+        b.onclick = () => {
+          let w = doodle || it.mehrfach ? { ...my } : {};
+          if (my[o.id] === k) delete w[o.id]; else w[o.id] = k;
+          planVote(it, Object.keys(w).length ? { wahl: w } : null);
+        };
+        ctl.append(b);
+      });
+      const bar = el("div", "po-bar"), fy = el("span", "y"), fm = el("span", "m");
+      fy.style.width = (yes / tot * 100) + "%"; fm.style.width = (mb / tot * 100) + "%"; bar.append(fy, fm);
+      row.append(lab, num, ctl, bar);
+      const ns = [...votes.filter(v => v.wahl?.[o.id] === "ja").map(v => v.name), ...votes.filter(v => v.wahl?.[o.id] === "vielleicht").map(v => v.name + " (?)")];
+      if (ns.length) row.append(el("div", "po-names", ns.join(", ")));
+      box.append(row);
+    });
+    const foot = el("div", "po-foot"); foot.append(el("span", "msg", `${votes.length} ${votes.length === 1 ? "Teilnehmer" : "Teilnehmer"}${it.geschlossen ? " · Abstimmung beendet" : ""}`));
+    if (doodle && best && canEditItem(it)) {
+      const o = opts.find(x => cnt(x, "ja") === best);
+      const b = el("button", "iconbtn", "Als Termin übernehmen"); b.type = "button";
+      b.onclick = () => {
+        if (!confirm(`„${label(o)}“ als Termin anlegen und die Abstimmung beenden?`)) return;
+        db.collection("planung").add({ typ: "termin", titel: it.titel, text: it.text || "", datum: o.datum || todayIso(), zeit: o.zeit || "", ort: o.text || "", von: ME().uid, vonName: myName(), erstellt: Date.now() })
+          .then(() => db.collection("planung").doc(it.id).update({ geschlossen: true, geaendert: Date.now() }))
+          .then(() => planMsg("Termin angelegt.")).catch(e => planMsg("Fehler: " + (e.message || e.code), true));
+      };
+      foot.append(b);
+    }
+    box.append(foot);
+    return box;
+  }
+  function planCard(it) {
+    const c = el("article", "plan-card t-" + it.typ + (it.geschlossen ? " closed" : ""));
+    const head = el("div", "pc-head");
+    if (it.typ === "termin" && it.datum) {
+      const d = new Date(it.datum + "T12:00:00"), cal = el("div", "pc-cal");
+      cal.append(el("span", "w", WT[d.getDay()]), el("span", "d", String(d.getDate())), el("span", "m", MON[d.getMonth()]));
+      head.append(cal);
+    }
+    const tt = el("div", "pc-tt");
+    tt.append(el("span", "pc-type", { termin: "Termin", umfrage: it.art === "termin" ? "Terminfindung" : "Abstimmung", notiz: "Notiz" }[it.typ] || ""));
+    tt.append(el("b", null, it.titel || "(ohne Titel)"));
+    const meta = [];
+    if (it.typ === "termin") { if (it.datum) meta.push(wdate(it.datum) + (it.zeit ? `, ${it.zeit} Uhr` : "")); if (it.ort) meta.push(it.ort); }
+    if (it.typ === "umfrage" && it.art !== "termin") meta.push(it.mehrfach ? "Mehrere Antworten möglich" : "Eine Antwort");
+    if (meta.length) tt.append(el("span", "pc-meta", meta.join(" · ")));
+    head.append(tt); c.append(head);
+    if (it.text) c.append(el("p", "pc-text", it.text));
+    if (it.typ === "termin") c.append(planRsvp(it));
+    if (it.typ === "umfrage") c.append(planPoll(it));
+    const foot = el("div", "pc-foot");
+    foot.append(el("span", "msg", `${it.vonName || "?"} · ${stamp(it.erstellt)}${it.geaendert ? " (geändert)" : ""}`));
+    if (canEditItem(it)) {
+      const act = el("div", "pc-act");
+      if (it.typ === "umfrage") { const b = el("button", "iconbtn", it.geschlossen ? "Wieder öffnen" : "Beenden"); b.type = "button"; b.onclick = () => db.collection("planung").doc(it.id).update({ geschlossen: !it.geschlossen, geaendert: Date.now() }).catch(e => planMsg(e.message, true)); act.append(b); }
+      const e1 = el("button", "iconbtn", "Bearbeiten"); e1.type = "button"; e1.onclick = () => planEdit(it.typ, it);
+      const e2 = el("button", "iconbtn danger", "Löschen"); e2.type = "button"; e2.onclick = () => planDelete(it);
+      act.append(e1, e2); foot.append(act);
+    }
+    c.append(foot);
+    return c;
+  }
+  function planDelete(it) {
+    if (!confirm(`„${it.titel || "Eintrag"}“ löschen?`)) return;
+    const ref = db.collection("planung").doc(it.id);
+    ref.collection("stimmen").get().then(s => Promise.all(s.docs.map(d => (d.ref || ref.collection("stimmen").doc(d.id)).delete().catch(() => {})))).catch(() => {})
+      .then(() => ref.delete()).then(() => planMsg("Gelöscht.")).catch(e => planMsg("Löschen fehlgeschlagen: " + (e.message || e.code), true));
+  }
+  function planRender() {
+    const list = $("planList"); if (!list) return; list.textContent = "";
+    $("planFilter").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.f === planFilter)));
+    const want = { alle: null, termine: "termin", umfragen: "umfrage", notizen: "notiz" }[planFilter];
+    const items = planItems.filter(it => !want || it.typ === want), today = todayIso();
+    const up = items.filter(it => it.typ === "termin" && (it.datum || "") >= today).sort((a, b) => (a.datum + (a.zeit || "")).localeCompare(b.datum + (b.zeit || "")));
+    const polls = items.filter(it => it.typ === "umfrage").sort((a, b) => (!!a.geschlossen - !!b.geschlossen) || (b.erstellt || 0) - (a.erstellt || 0));
+    const notes = items.filter(it => it.typ === "notiz").sort((a, b) => (b.geaendert || b.erstellt || 0) - (a.geaendert || a.erstellt || 0));
+    const past = items.filter(it => it.typ === "termin" && (it.datum || "") < today).sort((a, b) => b.datum.localeCompare(a.datum));
+    const sec = (title, arr) => { if (!arr.length) return; list.append(el("h3", "plan-h", title)); arr.forEach(it => list.append(planCard(it))); };
+    sec("Nächste Termine", up); sec("Abstimmungen", polls); sec("Notizen", notes);
+    if (past.length) { const d = el("details", "plan-past"); d.append(el("summary", null, `Vergangene Termine (${past.length})`)); past.forEach(it => d.append(planCard(it))); list.append(d); }
+    if (!list.children.length) {
+      const e = el("div", "empty"); e.append(el("strong", null, planStarted ? "Noch nichts geplant" : "Planung wird geladen …"));
+      if (planStarted) e.append("Lege oben einen Termin, eine Abstimmung (z. B. zur Terminfindung) oder eine Notiz an.");
+      list.append(e);
+    }
+  }
+
+  // Anlegen / Bearbeiten
+  let planEdSave = null;
+  function planEdClose() { $("planEd").hidden = true; if (!detailPid && $("em").hidden) document.body.style.overflow = ""; }
+  function planEdit(typ, it) {
+    it = it || {};
+    const body = $("planEdBody"); body.textContent = ""; $("planEdMsg").textContent = "";
+    $("planEdTitle").textContent = (it.id ? "Bearbeiten: " : "Neu: ") + { notiz: "Notiz", termin: "Termin", umfrage: "Abstimmung" }[typ];
+    const fld = (lab, node, cls) => { const l = el("label", "field" + (cls ? " " + cls : "")); l.append(el("span", "label", lab), node); body.append(l); return node; };
+    const inp = (type, val, ph) => { const i = el("input"); i.type = type; i.value = val || ""; if (ph) i.placeholder = ph; return i; };
+    const titel = fld("Titel", inp("text", it.titel, { termin: "z. B. Spieltag Dezember", umfrage: "z. B. Wann machen wir die Weihnachtsfeier?", notiz: "z. B. Kassenstand" }[typ]));
+    let datum, zeit, ort, art = it.art || "auswahl", mehrfach, optBox, opts = (it.optionen || []).map(o => ({ ...o }));
+    if (typ === "termin") {
+      const row = el("div", "pf-row"); body.append(row);
+      const d = el("label", "field"); d.append(el("span", "label", "Datum"), datum = inp("date", it.datum || firstFriday())); row.append(d);
+      const z = el("label", "field"); z.append(el("span", "label", "Uhrzeit"), zeit = inp("time", it.zeit || "19:00")); row.append(z);
+      ort = fld("Ort", inp("text", it.ort, "z. B. bei Aron"));
+    }
+    const text = fld(typ === "notiz" ? "Text" : "Beschreibung (optional)", (() => { const t = el("textarea"); t.rows = typ === "notiz" ? 7 : 3; t.value = it.text || ""; return t; })());
+    if (typ === "umfrage") {
+      const seg = el("div", "seg"); fld("Art", seg);
+      const drawOpts = () => {
+        optBox.textContent = "";
+        if (!opts.length) opts = art === "termin" ? [{ id: "", datum: firstFriday(), zeit: "19:00" }, { id: "", datum: "", zeit: "19:00" }] : [{ id: "", text: "" }, { id: "", text: "" }];
+        opts.forEach((o, k) => {
+          const r = el("div", "pf-opt");
+          if (art === "termin") {
+            const d = inp("date", o.datum); d.oninput = () => o.datum = d.value; d.setAttribute("aria-label", `Termin ${k + 1}: Datum`);
+            const z = inp("time", o.zeit); z.oninput = () => o.zeit = z.value; z.setAttribute("aria-label", `Termin ${k + 1}: Uhrzeit`);
+            r.append(d, z);
+          } else {
+            const t = inp("text", o.text, `Antwort ${k + 1}`); t.oninput = () => o.text = t.value; r.append(t);
+          }
+          const x = el("button", "iconbtn", "✕"); x.type = "button"; x.setAttribute("aria-label", "Option entfernen"); x.onclick = () => { opts.splice(k, 1); drawOpts(); };
+          r.append(x); optBox.append(r);
+        });
+        const add = el("button", "iconbtn", art === "termin" ? "+ Weiterer Termin" : "+ Weitere Antwort"); add.type = "button";
+        add.onclick = () => { opts.push(art === "termin" ? { id: "", datum: "", zeit: opts[opts.length - 1]?.zeit || "19:00" } : { id: "", text: "" }); drawOpts(); };
+        optBox.append(add);
+        mehrfach.closest("label").hidden = art === "termin";
+      };
+      [["auswahl", "Abstimmung"], ["termin", "Terminfindung"]].forEach(([k, lab]) => {
+        const b = el("button", null, lab); b.type = "button"; b.setAttribute("aria-pressed", String(art === k));
+        b.onclick = () => { if (art === k) return; art = k; opts = []; seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); drawOpts(); };
+        seg.append(b);
+      });
+      optBox = el("div", "pf-opts"); fld("Auswahlmöglichkeiten", optBox);
+      const ml = el("label", "excl"); mehrfach = el("input"); mehrfach.type = "checkbox"; mehrfach.checked = !!it.mehrfach; ml.append(mehrfach, " Mehrere Antworten erlauben"); body.append(ml);
+      drawOpts();
+    }
+    planEdSave = () => {
+      const msg = t => { $("planEdMsg").textContent = t; $("planEdMsg").className = "msg err"; };
+      const data = { typ, titel: titel.value.trim(), text: text.value.trim() };
+      if (!data.titel && !(typ === "notiz" && data.text)) return msg("Bitte einen Titel eingeben.");
+      if (typ === "termin") { if (!datum.value) return msg("Bitte ein Datum wählen."); Object.assign(data, { datum: datum.value, zeit: zeit.value, ort: ort.value.trim() }); }
+      if (typ === "umfrage") {
+        const clean = opts.filter(o => art === "termin" ? o.datum : (o.text || "").trim()).map(o => ({ id: o.id || "o" + Math.random().toString(36).slice(2, 8), ...(art === "termin" ? { datum: o.datum, zeit: o.zeit || "" } : { text: o.text.trim() }) }));
+        if (clean.length < 2) return msg("Bitte mindestens zwei Auswahlmöglichkeiten eintragen.");
+        Object.assign(data, { art, optionen: clean, mehrfach: art === "termin" ? true : !!mehrfach.checked });
+      }
+      $("planEdSave").disabled = true;
+      const p = it.id ? db.collection("planung").doc(it.id).update({ ...data, geaendert: Date.now() })
+                      : db.collection("planung").add({ ...data, von: ME().uid, vonName: myName(), erstellt: Date.now(), geschlossen: false });
+      p.then(() => { planEdClose(); planMsg(it.id ? "Gespeichert." : "Angelegt."); })
+        .catch(e => msg("Speichern fehlgeschlagen: " + (e.message || e.code)))
+        .finally(() => { $("planEdSave").disabled = false; });
+    };
+    $("planEd").hidden = false; document.body.style.overflow = "hidden";
+    setTimeout(() => titel.focus(), 0);
+  }
+  $("planEdSave").onclick = () => planEdSave && planEdSave();
+  $("planEdCancel").onclick = planEdClose; $("planEdClose").onclick = planEdClose;
+  $("planEd").addEventListener("click", e => { if (e.target === $("planEd")) planEdClose(); });
+  document.querySelectorAll("#secPlan [data-new]").forEach(b => b.onclick = () => { if (!db) return planMsg("Noch nicht verbunden.", true); planEdit(b.dataset.new); });
+  $("planFilter").querySelectorAll("button").forEach(b => b.onclick = () => { planFilter = b.dataset.f; try { localStorage.setItem("ksv-planfilter", planFilter); } catch {} planRender(); });
+
   // ---------- Rubriken (Navigationsleiste unten) ----------
-  const PANE = { stand: "secStand", book: "secBook", stat: "secStat", regel: "secRegel", set: "settings" };
-  let tab = "stand", lastPeriod = "all";
+  const PANE = { stand: "secStand", book: "secBook", stat: "secStat", regel: "secRegel", plan: "secPlan", set: "settings" };
+  let tab = "stand", lastPeriod = "all", prevTab = "stand";
   try { const t = localStorage.getItem("ksv-tab"); if (t && PANE[t]) tab = t; } catch {}
   const hasSeasons = () => seasonsSorted().length > 0;
   function showTab(t, animate = true) {
     if (!PANE[t]) t = "stand";
-    const changed = t !== tab; tab = t;
+    const changed = t !== tab; if (changed && t === "set") prevTab = tab === "set" ? prevTab : tab; tab = t;
     document.body.dataset.tab = t;
     document.querySelectorAll(".tabbar button").forEach(b => b.dataset.tab === t ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
     try { localStorage.setItem("ksv-tab", t); } catch {}
@@ -2444,6 +2824,7 @@ section.settings .setgrid>.field{background:var(--surface);border:1px solid var(
     if ((t === "stand" || t === "book") && isCmp()) { season = lastPeriod.startsWith("cmp:") ? "all" : lastPeriod; showTab(t); render(); return; }
     showTab(t);
     if (t === "regel") regelShow();
+    if (t === "plan") { planStart(); planSeen(); planRender(); }
   }
   function syncTab() {   // Zeitraum-Auswahl und Rubrik passen immer zusammen
     if (!isCmp()) lastPeriod = season;
@@ -2459,9 +2840,14 @@ section.settings .setgrid>.field{background:var(--surface);border:1px solid var(
   $("cmpS").onclick = () => { season = "cmp:s"; render(); };
   $("cmpY").onclick = () => { season = "cmp:y"; render(); };
   window.__ksvGoTab = goTab;
-  window.__ksvTabBack = () => { if (tab === "stand") return false; goTab("stand"); return true; };
+  window.__ksvTabBack = () => {
+    if (!$("acctMenu").hidden) { menuClose(); return true; }
+    if (!$("planEd").hidden) { planEdClose(); return true; }
+    if (tab === "stand") return false; goTab(tab === "set" ? prevTab : "stand"); return true;
+  };
   showTab(tab, false);
   if (tab === "regel") regelShow();
+  if (tab === "plan") planRender();
 
   $("fDate").value = firstFriday();
   render();
@@ -2474,6 +2860,7 @@ section.settings .setgrid>.field{background:var(--surface);border:1px solid var(
     const w = u ? await u.can("data.write") : null;
     if (w === false) { canWrite = false; $("entryHint").textContent = "Du kannst das Spielbuch ansehen, aber nichts eintragen."; }
     document.body.classList.toggle("ro", !canWrite);
+    planStart();
     let firstCfg = true;
     db.doc("config/main").onSnapshot(s => {
       cfg = s.exists ? { ...DEFAULT_CFG, ...JSON.parse(JSON.stringify(s.data())) } : { ...DEFAULT_CFG };
