@@ -55,7 +55,12 @@
     "auth/too-many-requests": "Zu viele Versuche. Bitte später erneut probieren.",
     "auth/network-request-failed": "Keine Internetverbindung.",
     "auth/user-disabled": "Dieses Konto ist gesperrt.",
-    "permission-denied": "Keine Berechtigung."
+    "auth/operation-not-allowed": "Die Anmeldung mit E-Mail/Passwort ist in Firebase noch nicht aktiviert (Authentication → Anmeldemethode).",
+    "auth/configuration-not-found": "Die Anmeldung ist in Firebase noch nicht eingerichtet (Authentication → Los geht's).",
+    "permission-denied": "Keine Berechtigung – bitte die Firestore-Regeln prüfen.",
+    "failed-precondition": "Die Firestore-Datenbank ist noch nicht angelegt.",
+    "not-found": "Die Firestore-Datenbank ist noch nicht angelegt.",
+    "unavailable": "Keine Verbindung zur Datenbank."
   };
   function msgOf(e) { return (e && FEHLER[e.code]) || (e && e.message) || "Unbekannter Fehler."; }
 
