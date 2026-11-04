@@ -1091,6 +1091,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
       h.hidden = false; $("logoutBtn").hidden = false; $("amSep").hidden = false;
     }
     render(); planStart();
+    regelShown = false; if (tab === "regel") regelShow(true);   // Regelwerk nach der Anmeldung (neu) laden
   };
   // Konto-Menü oben rechts
   function menuOpen() { $("acctMenu").hidden = false; $("acctBtn").setAttribute("aria-expanded", "true"); setTimeout(() => $("acctMenu").querySelector("button:not([hidden])")?.focus(), 0); }
@@ -2601,8 +2602,11 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
   const blockChars = blocks => (blocks || []).reduce((n, b) => n + b.segs.reduce((m, s) => m + s.t.length, 0), 0);
 
   async function regelShow(force) {
+    if (window.KSV_CLOUD_MODE && !cloudR()) {   // Vereins-Version: Anmeldung läuft noch → nach dem Anmelden laden
+      $("regelEmpty").hidden = true; $("regelText").hidden = true; regelMsg("Regelwerk wird geladen …"); return;
+    }
     if (regelShown && !force) { if (regelBlocks) regelRender(); return; }
-    regelShown = true;
+    regelShown = true; regelMsg("");
     const job = ++regelJob, admin = isAdmin();
     $("regelEdit").hidden = !admin; $("regelUpload").hidden = !admin; $("regelEmptyAdmin").hidden = !admin;
     let d = null;
