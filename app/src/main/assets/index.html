@@ -713,6 +713,21 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
 .rx-pn{display:flex;flex-direction:column} .rx-pn b{font-weight:600} .rx-pn small{font-size:12px;color:var(--muted)}
 .rx-person.me{cursor:pointer}
 .rx-pe{font-size:24px}
+/* ---------- Kachel: Drei-Punkte-Menü und Fußzeile ---------- */
+.pc-head .pc-tt{flex:1}
+.pc-more{position:relative;flex:none;margin:-4px -4px 0 0}
+.pc-dots{width:34px;height:34px;border:0;background:none;color:var(--muted);border-radius:50%;display:grid;place-items:center;cursor:pointer;padding:0}
+.pc-dots svg{width:20px;height:20px;fill:currentColor}
+.pc-dots:hover,.pc-dots[aria-expanded="true"]{background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink)}
+.pc-menu{position:absolute;right:0;top:calc(100% + 4px);z-index:40;min-width:230px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.22);padding:6px;display:flex;flex-direction:column;animation:tabIn .12s ease-out}
+.pc-menu button{text-align:left;border:0;background:none;color:inherit;font:inherit;font-size:15px;font-weight:600;padding:10px;border-radius:8px;cursor:pointer}
+.pc-menu button:hover,.pc-menu button:focus-visible{background:var(--surface)}
+.pc-menu button.danger{color:var(--danger)}
+.pc-foot{flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px}
+.pc-foot .pc-info{display:contents}
+.pc-foot > .rx, .pc-info > .rx{display:contents}
+.pc-foot .rx-pick{order:9}
+.pc-by{order:5;margin-left:auto;font-size:12px;color:var(--muted);text-align:right}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -3134,6 +3149,38 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     return box;
   }
 
+  // Drei-Punkte-Menü oben rechts auf der Kachel
+  let pcMenuClose = null;
+  function planItemMenu(it) {
+    const items = [];
+    if (it.typ === "termin" && it.datum) {
+      if (window.AndroidApp?.addToCalendar) items.push(["In Kalender eintragen", () => { const { allDay, start, end } = calTimes(it); window.AndroidApp.addToCalendar(it.titel || "Termin", start.getTime(), end.getTime(), allDay, it.ort || "", calDesc(it)); }]);
+      else items.push(["In Google Kalender eintragen", () => openExternal(calGoogle(it))], ["In Apple / iPhone Kalender eintragen", () => calApple(it)]);
+    }
+    if (canEditItem(it)) {
+      if (it.typ === "umfrage") items.push([it.geschlossen ? "Abstimmung wieder öffnen" : "Abstimmung beenden", () => db.collection("planung").doc(it.id).update({ geschlossen: !it.geschlossen, geaendert: Date.now() }).catch(e => planMsg(e.message, true))]);
+      items.push(["Bearbeiten", () => planEdit(it.typ, it)], ["Löschen", () => planDelete(it), "danger"]);
+    }
+    if (!items.length) return null;
+    const wrap = el("div", "pc-more"), btn = el("button", "pc-dots"); btn.type = "button";
+    btn.setAttribute("aria-label", "Weitere Aktionen"); btn.setAttribute("aria-haspopup", "menu"); btn.setAttribute("aria-expanded", "false");
+    btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg>';
+    btn.onclick = e => {
+      e.stopPropagation();
+      const wasOpen = !!wrap.querySelector(".pc-menu");
+      if (pcMenuClose) pcMenuClose();
+      if (wasOpen) return;
+      const m = el("div", "pc-menu"); m.setAttribute("role", "menu");
+      items.forEach(([label, fn, cls]) => { const b = el("button", cls || "", label); b.type = "button"; b.setAttribute("role", "menuitem"); b.onclick = ev => { ev.stopPropagation(); close(); fn(); }; m.append(b); });
+      const outside = ev => { if (!wrap.contains(ev.target)) close(); };
+      const key = ev => { if (ev.key === "Escape") { ev.stopPropagation(); close(); btn.focus(); } };
+      const close = () => { m.remove(); btn.setAttribute("aria-expanded", "false"); document.removeEventListener("click", outside, true); document.removeEventListener("keydown", key, true); pcMenuClose = null; };
+      wrap.append(m); btn.setAttribute("aria-expanded", "true"); pcMenuClose = close;
+      document.addEventListener("click", outside, true); document.addEventListener("keydown", key, true);
+      setTimeout(() => m.querySelector("button")?.focus(), 0);
+    };
+    wrap.append(btn); return wrap;
+  }
   function planCard(it) {
     const c = el("article", "plan-card t-" + it.typ + (it.geschlossen ? " closed" : ""));
     const head = el("div", "pc-head");
@@ -3149,14 +3196,15 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     if (it.typ === "termin") { if (it.datum) meta.push(wdate(it.datum) + (it.zeit ? `, ${it.zeit} Uhr` : "")); if (it.ort) meta.push(it.ort); }
     if (it.typ === "umfrage" && it.art !== "termin") meta.push(it.mehrfach ? "Mehrere Antworten möglich" : "Eine Antwort");
     if (meta.length) { const mt = el("span", "pc-meta"); mt.append(linkify(meta.join(" · "))); tt.append(mt); }
-    head.append(tt); c.append(head);
+    head.append(tt);
+    const menu = planItemMenu(it); if (menu) head.append(menu);
+    c.append(head);
     if (it.text) { const tx = el("p", "pc-text"); tx.append(linkify(it.text)); c.append(tx); }
     if (it.typ === "termin") c.append(planRsvp(it));
     if (it.typ === "umfrage") c.append(planPoll(it));
-    if (it.typ === "termin" && it.datum) c.append(planCalRow(it));
-    c.append(reactBar("i:" + it.id, it, db.collection("planung").doc(it.id), { an: it.von, titel: it.titel || "Planung", was: "deinen Eintrag" }));
+    // Fußzeile: links Emojis und Kommentare, rechts wer wann
     const foot = el("div", "pc-foot"), info = el("div", "pc-info");
-    info.append(el("span", "msg", `${it.vonName || "?"} · ${stamp(it.erstellt)}${it.geaendert ? " (geändert)" : ""}`));
+    info.append(reactBar("i:" + it.id, it, db.collection("planung").doc(it.id), { an: it.von, titel: it.titel || "Planung", was: "deinen Eintrag" }));
     const nC = (planComments[it.id] || []).length, open = planOpenC.has(it.id);
     const cb = el("button", "pc-cbtn" + (open ? " on" : "")); cb.type = "button";
     cb.setAttribute("aria-expanded", String(open)); cb.setAttribute("aria-label", `Kommentare (${nC})`);
@@ -3164,13 +3212,8 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     if (nC) cb.append(el("span", null, String(nC)));
     cb.onclick = () => { open ? planOpenC.delete(it.id) : planOpenC.add(it.id); planRender(); if (!open) setTimeout(() => document.getElementById("pcIn-" + it.id)?.focus(), 0); };
     info.append(cb); foot.append(info);
-    if (canEditItem(it)) {
-      const act = el("div", "pc-act");
-      if (it.typ === "umfrage") { const b = el("button", "iconbtn", it.geschlossen ? "Wieder öffnen" : "Beenden"); b.type = "button"; b.onclick = () => db.collection("planung").doc(it.id).update({ geschlossen: !it.geschlossen, geaendert: Date.now() }).catch(e => planMsg(e.message, true)); act.append(b); }
-      const e1 = el("button", "iconbtn", "Bearbeiten"); e1.type = "button"; e1.onclick = () => planEdit(it.typ, it);
-      const e2 = el("button", "iconbtn danger", "Löschen"); e2.type = "button"; e2.onclick = () => planDelete(it);
-      act.append(e1, e2); foot.append(act);
-    }
+    const by = el("span", "pc-by", `${it.vonName || "?"} · ${stamp(it.erstellt)}${it.geaendert ? " (geändert)" : ""}`);
+    foot.append(by);
     c.append(foot);
     if (open) c.append(planThread(it));
     return c;
@@ -3365,6 +3408,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
   window.__ksvGoTab = goTab;
   window.__ksvTabBack = () => {
     if (emoClose) { emoClose(); return true; }
+    if (pcMenuClose) { pcMenuClose(); return true; }
     if (!$("acctMenu").hidden) { menuClose(); return true; }
     if (!$("planEd").hidden) { planEdClose(); return true; }
     if (!$("regelEd").hidden) { regelEdClose(); return true; }
