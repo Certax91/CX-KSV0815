@@ -205,6 +205,10 @@
     var ref = fs.doc("nutzer/" + u.uid);
     unsubMe = ref.onSnapshot(function (snap) {
       if (!auth.currentUser || auth.currentUser.uid !== u.uid) return;   // Meldung zu einem vorher angemeldeten Konto
+      if (!snap.exists && snap.metadata && snap.metadata.fromCache) {   // offline und noch nichts zwischengespeichert: auf Verbindung warten
+        show(function (box) { box.appendChild(h("div", "auth-msg", "Keine Internetverbindung. Beim ersten Start wird einmal Internet benötigt.")); });
+        return;
+      }
       if (!snap.exists) {
         // Erst als Verwalter versuchen: Das erlauben die Regeln in Firebase nur der Verwalter-Adresse.
         // Alle anderen werden abgewiesen und als „wartet auf Freischaltung“ angelegt.
@@ -246,7 +250,7 @@
         text: String(ev.text || "").slice(0, 300), von: u.uid, zeit: Date.now() }).catch(function () { });
     };
     resolveReady({
-      db: fs,
+      db: offlineDb(fs),
       user: {
         can: function (perm) { return Promise.resolve(perm === "data.write" ? canWrite : true); },
         canEdit: function () { return canWrite; }, isOwner: function () { return me.admin; },
@@ -524,6 +528,34 @@
       go.style.alignSelf = "flex-start"; go.style.marginTop = "6px";
       box.appendChild(go); box.appendChild(m); grid.appendChild(box);
     }).catch(function () { });
+  }
+
+  // ---------- Offline: Schreibvorgänge nicht auf den Server warten lassen ----------
+  // Firestore speichert Änderungen sofort im Gerätespeicher und überträgt sie später.
+  // Ohne Netz würde das Versprechen erst nach der Übertragung erfüllt – die App soll aber sofort weiterarbeiten.
+  function offlineDb(base) {
+    var quick = function (p) {
+      if (navigator.onLine !== false) return p;
+      p.catch(function (e) { console.warn("Übertragung fehlgeschlagen", e); });
+      return Promise.race([p, new Promise(function (ok) { setTimeout(ok, 250); })]);
+    };
+    function q(x) {
+      return { get: function (o) { return x.get(o); }, onSnapshot: function () { return x.onSnapshot.apply(x, arguments); },
+        where: function () { return q(x.where.apply(x, arguments)); }, orderBy: function () { return q(x.orderBy.apply(x, arguments)); }, limit: function () { return q(x.limit.apply(x, arguments)); } };
+    }
+    function d(r) {
+      return { id: r.id, path: r.path, _ref: r,
+        get: function (o) { return r.get(o); }, onSnapshot: function () { return r.onSnapshot.apply(r, arguments); },
+        set: function (v, o) { return quick(o ? r.set(v, o) : r.set(v)); }, update: function () { return quick(r.update.apply(r, arguments)); },
+        delete: function () { return quick(r.delete()); }, collection: function (n) { return c(r.collection(n)); } };
+    }
+    function c(x) {
+      var o = q(x); o.path = x.path; o.id = x.id;
+      o.doc = function (id) { return d(id ? x.doc(id) : x.doc()); };
+      o.add = function (v) { var r = x.doc(); return quick(r.set(v)).then(function () { return d(r); }); };
+      return o;
+    }
+    return { doc: function (p) { return d(base.doc(p)); }, collection: function (p) { return c(base.collection(p)); } };
   }
 
   // ---------- Start ----------

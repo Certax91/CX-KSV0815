@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">KSV 08/15</string>
+    <string name="widget_beschreibung">Tabellenstand, nächster Termin und dein offener Betrag</string>
+    <string name="widget_leer">App einmal öffnen, um den Stand zu laden.</string>
 </resources>

@@ -183,6 +183,12 @@ public class MainActivity extends Activity {
         }
 
         /** true, wenn das Handy im dunklen Modus ist (für die Darstellung „Automatisch“). */
+        /** Daten für das Startbildschirm-Widget (Tabellenstand, Termin, offener Betrag). */
+        @JavascriptInterface
+        public void updateWidget(String json) {
+            try { KsvWidget.save(getApplicationContext(), json); } catch (Exception ignored) { }
+        }
+
         @JavascriptInterface
         public boolean isNightMode() {
             int m = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;

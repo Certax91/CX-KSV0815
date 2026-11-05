@@ -36,6 +36,18 @@ service cloud.firestore {
       allow update: if darfLesen() && nurZahlstatus() && (istKassierer() || eigeneZahlungGemeldet());
     }
     match /regelwerk/{id} { allow read: if darfLesen(); allow write: if darfSchreiben(); }
+    // Live-Spieltag: alle sehen den Zwischenstand, Eintragende erfassen die Spiele
+    match /live/{id} {
+      allow read: if darfLesen();
+      allow write: if darfSchreiben();
+      match /spiele/{sid} { allow read: if darfLesen(); allow write: if darfSchreiben(); }
+    }
+    // Änderungsprotokoll: alle lesen, jeder schreibt nur Einträge unter eigenem Namen, ändern/löschen nur Verwalter
+    match /protokoll/{id} {
+      allow read: if darfLesen();
+      allow create: if darfLesen() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if istVerwalter();
+    }
 
     match /planung/{id} {
       allow read: if darfLesen();
