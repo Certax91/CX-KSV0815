@@ -3371,7 +3371,13 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
   // ---------- Rubriken (Navigationsleiste unten) ----------
   const PANE = { stand: "secStand", book: "secBook", stat: "secStat", regel: "secRegel", plan: "secPlan", set: "settings" };
   let tab = "stand", lastPeriod = "all", prevTab = "stand";
-  try { const t = localStorage.getItem("ksv-tab"); if (t && PANE[t]) tab = t; } catch {}
+  // Neustart: immer Tabelle. Nur wenn die Seite in derselben Sitzung neu geladen wird
+  // (Browser-Reload oder Android hat die App im Hintergrund beendet) → zuletzt geöffnete Rubrik.
+  try {
+    const resume = location.hash === "#resume"; if (resume) history.replaceState(null, "", location.pathname + location.search);
+    const t = sessionStorage.getItem("ksv-tab") || (resume ? localStorage.getItem("ksv-tab") : null);
+    if (t && PANE[t]) tab = t;
+  } catch {}
   try { const q = new URLSearchParams(location.search).get("tab"); if (q && PANE[q]) tab = q; } catch {}
   const hasSeasons = () => seasonsSorted().length > 0;
   function showTab(t, animate = true) {
@@ -3379,7 +3385,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     const changed = t !== tab; if (changed && t === "set") prevTab = tab === "set" ? prevTab : tab; tab = t;
     document.body.dataset.tab = t;
     document.querySelectorAll(".tabbar button").forEach(b => b.dataset.tab === t ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
-    try { localStorage.setItem("ksv-tab", t); } catch {}
+    try { localStorage.setItem("ksv-tab", t); sessionStorage.setItem("ksv-tab", t); } catch {}
     if (changed && animate) {
       window.scrollTo(0, 0);
       const p = $(t === "stat" && isCmp() ? "secCmp" : PANE[t]); p.classList.remove("tab-in"); void p.offsetWidth; p.classList.add("tab-in");

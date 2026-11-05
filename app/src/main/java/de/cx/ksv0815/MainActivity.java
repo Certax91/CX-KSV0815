@@ -106,7 +106,8 @@ public class MainActivity extends Activity {
             }
         });
 
-        if (savedInstanceState != null) web.restoreState(savedInstanceState);
+        // Kaltstart → Tabelle; wurde die App im Hintergrund vom System beendet → letzte Rubrik
+        if (savedInstanceState != null) web.loadUrl("file:///android_asset/index.html#resume");
         else web.loadUrl("file:///android_asset/index.html");
     }
 
