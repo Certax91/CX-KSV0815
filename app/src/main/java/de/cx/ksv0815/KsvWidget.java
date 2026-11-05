@@ -55,9 +55,6 @@ public class KsvWidget extends AppWidgetProvider {
             v.setTextViewText(R.id.w_title, o.optString("titel", "KSV 08/15"));
             v.setTextViewText(R.id.w_stand, o.optString("stand", ""));
             v.setTextViewText(R.id.w_zeitraum, o.optString("zeitraum", ""));
-            String live = o.optString("live", "");
-            v.setViewVisibility(R.id.w_live, live.isEmpty() ? View.GONE : View.VISIBLE);
-            v.setTextViewText(R.id.w_live, "● " + live);
             JSONArray rows = o.optJSONArray("rows");
             int n = rows == null ? 0 : Math.min(rows.length(), ROW.length);
             v.setViewVisibility(R.id.w_empty, n == 0 ? View.VISIBLE : View.GONE);

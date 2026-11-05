@@ -728,59 +728,6 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
 .pc-foot > .rx, .pc-info > .rx{display:contents}
 .pc-foot .rx-pick{order:9}
 .pc-by{order:5;margin-left:auto;font-size:12px;color:var(--muted);text-align:right}
-/* ---------- Live-Spieltag ---------- */
-.live-bar{display:flex;flex-direction:column;gap:8px}
-.live-bar[hidden]{display:none}
-body[data-tab="regel"] .live-bar,body[data-tab="plan"] .live-bar,body[data-tab="set"] .live-bar,body[data-tab="stat"] .live-bar{display:none}
-.live-card{display:flex;flex-direction:column;gap:3px;text-align:left;border:1.5px solid var(--gold);background:var(--gold-soft);color:var(--ink);border-radius:12px;padding:10px 14px;font:inherit;cursor:pointer}
-.lc-t{display:flex;align-items:center;gap:8px;font-size:15px}
-.lc-s{font-size:13px;color:var(--muted)}
-.live-dot{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#c62828;border-radius:999px;padding:2px 8px 2px 6px}
-.live-dot::before{content:"";width:7px;height:7px;border-radius:50%;background:#fff;animation:livePulse 1.4s ease-in-out infinite}
-@keyframes livePulse{50%{opacity:.25}}
-@media (prefers-reduced-motion:reduce){.live-dot::before{animation:none}}
-.live-start{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--gold);background:none;color:var(--gold-ink);border-radius:999px;padding:6px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
-.live-start svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
-.lv-panel{max-width:640px}
-.lv-panel .sechead{align-items:center;flex-wrap:nowrap}
-.lv-panel h2{flex:1;font-size:20px}
-.lv-body{display:flex;flex-direction:column;gap:12px}
-.lv-stand{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
-.lv-stand .ct{margin:0 0 4px}
-.lv-row{display:grid;grid-template-columns:28px 1fr auto 64px 72px;gap:8px;align-items:baseline;padding:5px 0;border-top:1px solid var(--line);font-size:15px}
-.lv-row:nth-child(2){border-top:0}
-.lv-row.me .lv-nm{font-weight:800}
-.lv-rk{font-weight:800;color:var(--gold-ink)}
-.lv-n{font-size:12px;color:var(--muted)}
-.lv-pt{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
-.lv-eu{text-align:right;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
-.lv-tabs{align-self:flex-start}
-.lv-seat{margin:0}
-.lv-form{display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px}
-.lv-field{display:flex;flex-direction:column;gap:6px}
-.lv-chips{display:flex;flex-wrap:wrap;gap:6px}
-.lv-chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;min-height:40px}
-.lv-chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.lv-form .seg{align-self:flex-start}
-.lv-form .seg button{padding:7px 14px;font-size:14px}
-.lv-wert{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.lv-wert .label{flex-basis:100%}
-.lv-step{width:40px;height:40px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;font-size:22px;font-weight:700;cursor:pointer;line-height:1}
-.lv-val{width:56px;height:40px;text-align:center;font-size:18px;font-weight:800;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
-.lv-wert .excl{padding:0 0 0 8px}
-.lv-save{align-self:stretch;padding:12px;font-size:16px}
-#lvMsg{min-height:0}
-#lvMsg.err{color:var(--danger)}
-.lv-games{display:flex;flex-direction:column;gap:2px}
-.lv-games .ct{margin:0 0 4px}
-.lv-game{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
-.lg-m{display:flex;flex-direction:column;gap:2px;min-width:0}
-.lg-m b{font-size:14px} .lg-m small{font-size:12px;color:var(--muted)}
-.lv-end{justify-content:space-between;border-top:1px solid var(--line);padding-top:12px}
-.btn.ghost.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 45%,transparent)}
-.lv-tables{display:flex;flex-direction:column;gap:6px}
-.lv-table{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14px}
-.lv-body .row{display:flex;flex-wrap:wrap;gap:12px}
 /* ---------- Änderungsprotokoll ---------- */
 .lg-panel{max-width:640px}
 .lg-panel .sechead{align-items:center;flex-wrap:nowrap}
@@ -791,7 +738,6 @@ body[data-tab="regel"] .live-bar,body[data-tab="plan"] .live-bar,body[data-tab="
 .lg-row{border-left:3px solid var(--line);padding:6px 0 6px 10px;margin:2px 0}
 .lg-row.lg-spieltag{border-left-color:var(--ink)}
 .lg-row.lg-zahlung{border-left-color:var(--gold)}
-.lg-row.lg-live{border-left-color:#c62828}
 .lg-h{display:flex;justify-content:space-between;gap:8px;font-size:13px}
 .lg-h span{color:var(--muted)}
 .lg-t{font-size:14px;line-height:1.4;overflow-wrap:anywhere}
@@ -878,12 +824,6 @@ body[data-tab="regel"] .live-bar,body[data-tab="plan"] .live-bar,body[data-tab="
   </div>
 </div>
 
-<div class="pd" id="lv" hidden role="dialog" aria-modal="true" aria-labelledby="lvTitle">
-  <div class="pd-panel lv-panel">
-    <div class="sechead"><h2 id="lvTitle">Live-Spieltag</h2><button class="iconbtn" id="lvClose" type="button">Schließen</button></div>
-    <div id="lvBody" class="lv-body"></div>
-  </div>
-</div>
 <div class="pd" id="lg" hidden role="dialog" aria-modal="true" aria-labelledby="lgTitle">
   <div class="pd-panel lg-panel">
     <div class="sechead"><h2 id="lgTitle">Änderungsprotokoll</h2><button class="iconbtn" id="lgClose" type="button">Schließen</button></div>
@@ -945,8 +885,6 @@ body[data-tab="regel"] .live-bar,body[data-tab="plan"] .live-bar,body[data-tab="
       <span class="msg" id="factorNote"></span>
     </div>
   </div>
-
-  <div class="live-bar" id="liveBar" hidden></div>
 
   <section id="secStand" aria-labelledby="h-stand" style="display:flex;flex-direction:column;gap:12px">
     <div class="sechead"><h2 id="h-stand">Tabelle</h2></div>
@@ -1269,7 +1207,7 @@ body[data-tab="regel"] .live-bar,body[data-tab="plan"] .live-bar,body[data-tab="
   $("acctBtn").onclick = e => { e.stopPropagation(); $("acctMenu").hidden ? menuOpen() : menuClose(); };
   document.addEventListener("click", e => { if (!$("acctMenu").hidden && !e.target.closest(".acct")) menuClose(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("acctMenu").hidden) menuClose(); });
-  document.addEventListener("keydown", e => { if (e.key !== "Escape" || emoClose || pcMenuClose) return; if (!$("lg").hidden) protoClose(); else if (!$("lv").hidden && !document.querySelector(".app-dlg")) liveClose(); });
+  document.addEventListener("keydown", e => { if (e.key !== "Escape" || emoClose || pcMenuClose) return; if (!$("lg").hidden) protoClose(); });
   $("acctMenu").addEventListener("click", e => { if (e.target.closest("button")) menuClose(); });
   $("setBtn").onclick = () => goTab("set");
   $("logoutBtn").onclick = () => { if (window.KSV_LOGOUT) window.KSV_LOGOUT(); };
@@ -1668,7 +1606,6 @@ body[data-tab="regel"] .live-bar,body[data-tab="plan"] .live-bar,body[data-tab="
         else { const df = gameDiff(prevG, { ...gNew, fees: fs, excluded: $("fExcl").checked, noFee: $("fNoFee").checked, double: $("fDouble").checked, note: $("fNote").value.trim() });
           logChange("spieltag", `Spieltag ${fmtDate(date)} geändert` + (df.length ? ": " + df.join("; ") + "." : " (keine Werte geändert)."));
         }
-        liveDone(date);
         Object.keys({ ...sc, ...fs }).forEach(pid => {
           const amt = openAmt(gNew, pid), was = prevG ? payOf(prevG, pid) : "paid";
           if (amt > 0 && payOf(gNew, pid) === "open" && (was !== "open" || !prevG))
@@ -3467,250 +3404,9 @@ body[data-tab="regel"] .live-bar,body[data-tab="plan"] .live-bar,body[data-tab="
   document.querySelectorAll("#secPlan [data-new]").forEach(b => b.onclick = () => { if (!db) return planMsg("Noch nicht verbunden.", true); planEdit(b.dataset.new); });
   $("planFilter").querySelectorAll("button").forEach(b => b.onclick = () => { planFilter = b.dataset.f; try { localStorage.setItem("ksv-planfilter", planFilter); } catch {} planRender(); });
 
-  // ---------- Live-Spieltag: Spiele am Tisch einzeln erfassen ----------
-  // Sammlung „live/{datum}“ (Tische, Zählweise, Status) mit Unter-Sammlung „spiele“ (je Spiel ein Eintrag).
-  // Zählweise „kasse“: Verlierer zahlen den Spielwert (verlorenes Solo: Solist zahlt dreifach).
-  // Zählweise „plusminus“: Gewinner +Wert, Verlierer −Wert (Solo dreifach für den Solisten).
-  let lives = [], liveGames = {}, liveSubs = {}, liveOpen = null, liveTable = 0, liveForm = null, liveSetup = null, liveTransfer = null, liveStarted = false;
   const pName = pid => cfg.players.find(p => p.id === pid)?.name || "?";
-  const liveRun = () => lives.filter(l => l.status === "laeuft").sort((a, b) => b.id.localeCompare(a.id));
-  const liveRef = id => db.collection("live").doc(id);
-  function liveStart() {
-    if (liveStarted || !db) return; liveStarted = true;
-    db.collection("live").onSnapshot(s => {
-      lives = s.docs.map(d => ({ id: d.id, ...d.data() }));
-      lives.forEach(l => {
-        if (l.status === "laeuft" && !liveSubs[l.id]) liveSubs[l.id] = liveRef(l.id).collection("spiele").onSnapshot(q => {
-          liveGames[l.id] = q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.zeit || 0) - (b.zeit || 0));
-          liveRender();
-        }, () => {});
-      });
-      Object.keys(liveSubs).forEach(id => { if (!lives.some(l => l.id === id && l.status === "laeuft")) { liveSubs[id](); delete liveSubs[id]; } });
-      liveRender();
-    }, () => {});
-  }
-  // Tacken je Spieler für ein Spiel
-  function gameDelta(l, g) {
-    const w = (g.wert || 0) * (g.bock ? 2 : 1), out = {}, sp = g.spieler || [], gew = g.gew || [];
-    const los = sp.filter(p => !gew.includes(p));
-    sp.forEach(p => out[p] = 0);
-    const soloLost = g.art === "solo" && los.length === 1, soloWon = g.art === "solo" && gew.length === 1;
-    if ((l.zaehl || "kasse") === "kasse") {
-      if (soloLost) out[los[0]] = 3 * w; else los.forEach(p => out[p] = w);
-    } else {
-      if (soloWon) { out[gew[0]] = 3 * w; los.forEach(p => out[p] = -w); }
-      else if (soloLost) { out[los[0]] = -3 * w; gew.forEach(p => out[p] = w); }
-      else { gew.forEach(p => out[p] = w); los.forEach(p => out[p] = -w); }
-    }
-    return out;
-  }
-  function liveTotals(l) {
-    const tot = {}, n = {};
-    (l.tische || []).forEach(t => t.sp.forEach(p => { tot[p] = 0; n[p] = 0; }));
-    (liveGames[l.id] || []).forEach(g => { const d = gameDelta(l, g); Object.entries(d).forEach(([p, v]) => { tot[p] = (tot[p] || 0) + v; n[p] = (n[p] || 0) + 1; }); });
-    return { tot, n };
-  }
-  // Geber und Aussetzer je Tisch reihum
-  function liveDealer(l, ti) {
-    const t = l.tische[ti], k = (liveGames[l.id] || []).filter(g => g.t === ti).length;
-    const dealer = t.sp[k % t.sp.length], out = [];
-    if (t.sp.length > 4) { const di = k % t.sp.length; for (let i = 0; i < t.sp.length - 4; i++) out.push(t.sp[(di + i * (t.sp.length === 6 ? 3 : 1)) % t.sp.length]); }
-    return { dealer, active: t.sp.filter(p => !out.includes(p)), nr: k + 1 };
-  }
-  function liveBar() {
-    const box = $("liveBar"); if (!box) return;
-    box.textContent = ""; const run = liveRun();
-    run.forEach(l => {
-      const { tot } = liveTotals(l), ent = Object.entries(tot), cnt = (liveGames[l.id] || []).length;
-      const best = ent.length && cnt ? ent.sort((a, b) => (l.zaehl === "plusminus" || cfg.dir === "high") ? b[1] - a[1] : a[1] - b[1])[0][0] : null;
-      const b = el("button", "live-card"); b.type = "button";
-      const t = el("div", "lc-t"); t.append(el("span", "live-dot", "Live"), el("b", null, `Spieltag ${fmtDate(l.date)}`));
-      b.append(t, el("span", "lc-s", `${cnt} Spiel${cnt === 1 ? "" : "e"}${best ? " · vorne: " + pName(best) : ""} · Zwischenstand ansehen`));
-      b.onclick = () => liveShow(l.id); box.append(b);
-    });
-    if (!run.length && canWrite && db) {
-      const b = el("button", "live-start"); b.type = "button";
-      b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5"/><path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4"/></svg>';
-      b.append("Live-Spieltag starten"); b.onclick = () => liveShow(null); box.append(b);
-    }
-    box.hidden = !box.children.length;
-  }
-  function liveRender() { liveBar(); widgetPush(); if (liveOpen !== null && !$("lv").hidden) liveDraw(); }
-  function liveShow(id) {
-    liveOpen = id || ""; liveTable = 0; liveForm = null; liveSetup = null;
-    $("lv").hidden = false; document.body.style.overflow = "hidden"; liveDraw();
-    setTimeout(() => $("lvClose").focus(), 0);
-  }
-  function liveClose() { $("lv").hidden = true; liveOpen = null; if ($("em").hidden && !detailPid) document.body.style.overflow = ""; }
-  const lvMsg = (t, err) => { const m = $("lvMsg"); if (m) { m.textContent = t || ""; m.classList.toggle("err", !!err); } };
-  function liveDraw() {
-    const body = $("lvBody"); body.textContent = "";
-    const l = liveOpen ? lives.find(x => x.id === liveOpen) : null;
-    if (liveOpen && (!l || l.status !== "laeuft")) { $("lvTitle").textContent = "Live-Spieltag"; body.append(el("p", "msg", l ? "Dieser Live-Spieltag ist abgeschlossen." : "Der Live-Spieltag wurde beendet.")); return; }
-    if (!l) return liveDrawSetup(body);
-    $("lvTitle").textContent = `Live · Spieltag ${fmtDate(l.date)}`;
-    const gl = liveGames[l.id] || [], { tot, n } = liveTotals(l);
-    const highGood = l.zaehl === "plusminus" || cfg.dir === "high";
-    // Zwischenstand
-    const sb = el("div", "lv-stand"); sb.append(el("p", "ct", `Zwischenstand · ${gl.length} Spiel${gl.length === 1 ? "" : "e"} · ${l.zaehl === "plusminus" ? "Plus/Minus" : "Verlierer zahlen"}`));
-    const order = Object.keys(tot).sort((a, b) => highGood ? tot[b] - tot[a] : tot[a] - tot[b]);
-    const rk2 = {}; order.forEach(p => rk2[p] = order.findIndex(q => tot[q] === tot[p]) + 1);
-    order.forEach(p => {
-      const r = el("div", "lv-row" + (p === myPid() ? " me" : ""));
-      r.append(el("span", "lv-rk", gl.length ? rk2[p] + "." : "–"), el("span", "lv-nm", pName(p)), el("span", "lv-n", `${n[p] || 0} Sp.`),
-        el("span", "lv-pt", `${tot[p] > 0 && highGood ? "+" : ""}${nf1.format(tot[p])}`), el("span", "lv-eu", eur(tot[p] * F(l.date))));
-      sb.append(r);
-    });
-    body.append(sb);
-    // Tische
-    if (l.tische.length > 1) {
-      const tabs = el("div", "seg lv-tabs"); tabs.setAttribute("role", "group"); tabs.setAttribute("aria-label", "Tisch");
-      l.tische.forEach((t, i) => { const b = el("button", null, t.n || `Tisch ${i + 1}`); b.type = "button"; b.setAttribute("aria-pressed", String(i === liveTable)); b.onclick = () => { liveTable = i; liveForm = null; liveDraw(); }; tabs.append(b); });
-      body.append(tabs);
-    }
-    const ti = Math.min(liveTable, l.tische.length - 1), t = l.tische[ti], dl = liveDealer(l, ti);
-    body.append(el("p", "msg lv-seat", `${t.n || "Tisch " + (ti + 1)}: ${t.sp.map(pName).join(", ")} · Spiel ${dl.nr} · Geber: ${pName(dl.dealer)}`));
-    if (canWrite) body.append(liveDrawForm(l, ti, dl));
-    // Spielliste
-    const lst = el("div", "lv-games"), tg = gl.filter(g => g.t === ti);
-    lst.append(el("p", "ct", `Spiele an ${t.n || "Tisch " + (ti + 1)}`));
-    if (!tg.length) lst.append(el("p", "msg", "Noch keine Spiele eingetragen."));
-    tg.slice().reverse().forEach((g, k) => {
-      const nr = tg.length - k, d = gameDelta(l, g), r = el("div", "lv-game");
-      const txt = g.art === "solo" ? `Solo ${pName((g.gew.length === 1 ? g.gew : g.spieler.filter(p => !g.gew.includes(p)))[0])} ${g.gew.length === 1 ? "gewonnen" : "verloren"}` : `${g.gew.map(pName).join(" & ")} gewinnen`;
-      const main = el("div", "lg-m"); main.append(el("b", null, `${nr}. ${txt}`), el("small", null, `${g.wert} Tacken${g.bock ? " · Bock ×2" : ""} · ` + Object.entries(d).filter(([, v]) => v).map(([p, v]) => `${pName(p)} ${v > 0 && l.zaehl === "plusminus" ? "+" : ""}${nf1.format(v)}`).join(", ")));
-      r.append(main);
-      if (canWrite) { const x = el("button", "iconbtn", "Löschen"); x.type = "button"; x.setAttribute("aria-label", `Spiel ${nr} löschen`);
-        x.onclick = async () => { if (await appConfirm({ title: `Spiel ${nr} löschen?`, text: txt, ok: "Löschen", danger: true })) liveRef(l.id).collection("spiele").doc(g.id).delete().then(() => logChange("live", `Live ${fmtDate(l.date)}: Spiel ${nr} an ${t.n || "Tisch " + (ti + 1)} gelöscht (${txt}).`)).catch(e => lvMsg(e.message, true)); };
-        r.append(x); }
-      lst.append(r);
-    });
-    body.append(lst);
-    if (canWrite) {
-      const act = el("div", "actions lv-end");
-      const tr = el("button", "btn", "Spieltag übernehmen"); tr.type = "button"; tr.disabled = !gl.length;
-      tr.onclick = () => liveToEntry(l);
-      const ab = el("button", "btn ghost danger", "Live-Spieltag verwerfen"); ab.type = "button";
-      ab.onclick = async () => {
-        if (!await appConfirm({ title: "Live-Spieltag verwerfen?", text: `Alle ${gl.length} erfassten Spiele werden gelöscht.`, ok: "Verwerfen", danger: true })) return;
-        try { await Promise.all(gl.map(g => liveRef(l.id).collection("spiele").doc(g.id).delete())); await liveRef(l.id).delete(); logChange("live", `Live-Spieltag ${fmtDate(l.date)} verworfen (${gl.length} Spiele).`); liveClose(); }
-        catch (e) { lvMsg(e.message, true); }
-      };
-      act.append(tr, ab); body.append(act);
-    }
-  }
-  function liveDrawForm(l, ti, dl) {
-    const t = l.tische[ti];
-    if (!liveForm || liveForm.ti !== ti || liveForm.nr !== dl.nr) liveForm = { ti, nr: dl.nr, active: [...dl.active], art: "normal", gew: [], solist: null, soloWon: true, wert: 1, bock: false };
-    const f = liveForm, box = el("div", "lv-form");
-    const chips = (label, list, isOn, onTap) => {
-      const w = el("div", "lv-field"); w.append(el("span", "label", label)); const c = el("div", "lv-chips");
-      list.forEach(p => { const b = el("button", "lv-chip" + (isOn(p) ? " on" : ""), pName(p)); b.type = "button"; b.setAttribute("aria-pressed", String(isOn(p))); b.onclick = () => { onTap(p); liveDraw(); }; c.append(b); });
-      w.append(c); return w;
-    };
-    if (t.sp.length > 4) box.append(chips(`Es spielen (${f.active.length} von 4)`, t.sp, p => f.active.includes(p), p => {
-      f.active = f.active.includes(p) ? f.active.filter(x => x !== p) : [...f.active, p]; f.gew = f.gew.filter(x => f.active.includes(x)); if (!f.active.includes(f.solist)) f.solist = null; }));
-    const art = el("div", "seg lv-art"); [["normal", "Normalspiel"], ["solo", "Solo"]].forEach(([k, txt]) => { const b = el("button", null, txt); b.type = "button"; b.setAttribute("aria-pressed", String(f.art === k)); b.onclick = () => { f.art = k; liveDraw(); }; art.append(b); });
-    box.append(art);
-    if (f.art === "normal") box.append(chips("Gewonnen haben (2 antippen)", f.active, p => f.gew.includes(p), p => { f.gew = f.gew.includes(p) ? f.gew.filter(x => x !== p) : [...f.gew, p].slice(-2); }));
-    else {
-      box.append(chips("Solist", f.active, p => f.solist === p, p => { f.solist = f.solist === p ? null : p; }));
-      const sw = el("div", "seg"); [[true, "gewonnen"], [false, "verloren"]].forEach(([k, txt]) => { const b = el("button", null, "Solo " + txt); b.type = "button"; b.setAttribute("aria-pressed", String(f.soloWon === k)); b.onclick = () => { f.soloWon = k; liveDraw(); }; sw.append(b); });
-      box.append(sw);
-    }
-    const wr = el("div", "lv-wert"); wr.append(el("span", "label", "Spielwert (Tacken)"));
-    const minus = el("button", "lv-step", "−"); minus.type = "button"; minus.setAttribute("aria-label", "Wert verringern"); minus.onclick = () => { f.wert = Math.max(1, f.wert - 1); liveDraw(); };
-    const val = el("input", "lv-val"); val.inputMode = "numeric"; val.value = String(f.wert); val.setAttribute("aria-label", "Spielwert");
-    val.oninput = () => { const v = parseInt(val.value, 10); if (v > 0) f.wert = v; };
-    const plus = el("button", "lv-step", "+"); plus.type = "button"; plus.setAttribute("aria-label", "Wert erhöhen"); plus.onclick = () => { f.wert = f.wert + 1; liveDraw(); };
-    const bk = el("label", "excl"), cb = el("input"); cb.type = "checkbox"; cb.checked = f.bock; cb.onchange = () => { f.bock = cb.checked; }; bk.append(cb, " Bock (×2)");
-    wr.append(minus, val, plus, bk); box.append(wr);
-    const ok = el("button", "btn lv-save", `Spiel ${dl.nr} eintragen`); ok.type = "button";
-    ok.onclick = () => {
-      if (f.active.length !== 4) return lvMsg("Bitte genau 4 Spieler auswählen, die dieses Spiel spielen.", true);
-      let gew;
-      if (f.art === "normal") { if (f.gew.length !== 2) return lvMsg("Bitte die 2 Gewinner antippen.", true); gew = f.gew; }
-      else { if (!f.solist) return lvMsg("Bitte den Solisten antippen.", true); gew = f.soloWon ? [f.solist] : f.active.filter(p => p !== f.solist); }
-      const wert = parseInt(val.value, 10); if (!(wert > 0)) return lvMsg("Der Spielwert muss mindestens 1 sein.", true);
-      const g = { t: ti, art: f.art, spieler: f.active, gew, wert, bock: f.bock, geber: dl.dealer, zeit: Date.now(), von: ME().uid, vonName: myName() };
-      liveForm = null; lvMsg("");
-      liveRef(l.id).collection("spiele").doc().set(g).catch(e => lvMsg("Nicht gespeichert: " + (e.message || e.code), true));
-      liveDraw();
-    };
-    box.append(ok, el("span", "msg", "")); box.lastChild.id = "lvMsg";
-    return box;
-  }
-  function liveDrawSetup(body) {
-    $("lvTitle").textContent = "Live-Spieltag starten";
-    if (!canWrite) { body.append(el("p", "msg", "Nur Mitglieder mit Schreibrechten können einen Live-Spieltag starten.")); return; }
-    const s = liveSetup || (liveSetup = { date: todayIso(), zaehl: cfg.dir === "high" ? "plusminus" : "kasse", sel: activePlayers().filter(p => !p.guest).map(p => p.id), tische: null });
-    const row = el("div", "row");
-    const fd = el("div", "field"), di = el("input"); di.type = "date"; di.id = "lvDate"; di.value = s.date; di.onchange = () => { s.date = di.value; };
-    const dl = el("label", "label", "Datum"); dl.htmlFor = "lvDate"; fd.append(dl, di);
-    const fz = el("div", "field"); fz.append(el("span", "label", "Zählweise"));
-    const seg = el("div", "seg"); [["kasse", "Verlierer zahlen"], ["plusminus", "Plus/Minus"]].forEach(([k, txt]) => { const b = el("button", null, txt); b.type = "button"; b.setAttribute("aria-pressed", String(s.zaehl === k)); b.onclick = () => { s.zaehl = k; liveDraw(); }; seg.append(b); });
-    fz.append(seg); row.append(fd, fz); body.append(row);
-    body.append(el("p", "msg", s.zaehl === "kasse" ? "Verlierer zahlen den Spielwert in Tacken, ein verlorenes Solo kostet den Solisten das Dreifache. Am Ende wird daraus das Spielgeld (weniger ist besser)." : "Gewinner erhalten den Spielwert, Verlierer verlieren ihn, ein Solo zählt dreifach für den Solisten. Am Ende wird der Saldo als Punkte übernommen."));
-    const pw = el("div", "lv-field"); pw.append(el("span", "label", `Wer ist da? (${s.sel.length})`));
-    const pc = el("div", "lv-chips");
-    activePlayers().forEach(p => { const on = s.sel.includes(p.id), b = el("button", "lv-chip" + (on ? " on" : ""), p.name + (p.guest ? " (Gast)" : "")); b.type = "button"; b.setAttribute("aria-pressed", String(on));
-      b.onclick = () => { s.sel = on ? s.sel.filter(x => x !== p.id) : [...s.sel, p.id]; s.tische = null; liveDraw(); }; pc.append(b); });
-    pw.append(pc); body.append(pw);
-    const draw = () => {   // auslosen: so viele Tische mit mindestens 4 Spielern wie möglich, Plätze zufällig
-      const ids = [...s.sel]; for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
-      const k = Math.max(1, Math.floor(ids.length / 4)), t = Array.from({ length: k }, (_, i) => ({ n: k > 1 ? `Tisch ${i + 1}` : "Tisch", sp: [] }));
-      ids.forEach((p, i) => t[i % k].sp.push(p)); s.tische = t;
-    };
-    if (s.sel.length >= 4 && !s.tische) draw();
-    if (s.tische) {
-      const tb = el("div", "lv-tables");
-      s.tische.forEach(t => { const c = el("div", "lv-table"); c.append(el("b", null, t.n), el("span", null, t.sp.map(pName).join(" → "))); tb.append(c); });
-      const re = el("button", "iconbtn", "Neu auslosen"); re.type = "button"; re.onclick = () => { draw(); liveDraw(); };
-      body.append(el("p", "ct", "Tische und Sitzreihenfolge (erster Geber zuerst)"), tb, re);
-      if (s.tische.some(t => t.sp.length > 5)) body.append(el("p", "msg", "An Tischen mit mehr als 5 Spielern setzen pro Spiel mehrere aus – das lässt sich bei jedem Spiel anpassen."));
-    } else body.append(el("p", "msg", "Mindestens 4 Spieler auswählen."));
-    const act = el("div", "actions"), go = el("button", "btn", "Live-Spieltag starten"); go.type = "button"; go.disabled = !s.tische;
-    go.onclick = async () => {
-      if (!s.date) return lvMsg("Bitte ein Datum wählen.", true);
-      if (games.some(g => g.id === s.date)) return lvMsg(`Für den ${fmtDate(s.date)} gibt es schon einen Spieltag im Spielbuch.`, true);
-      if (lives.some(x => x.id === s.date && x.status === "laeuft")) return lvMsg("Für dieses Datum läuft schon ein Live-Spieltag.", true);
-      go.disabled = true;
-      try {
-        await liveRef(s.date).set({ date: s.date, status: "laeuft", zaehl: s.zaehl, tische: s.tische, start: Date.now(), von: ME().uid, vonName: myName() });
-        logChange("live", `Live-Spieltag ${fmtDate(s.date)} gestartet (${s.sel.length} Spieler, ${s.tische.length} Tisch${s.tische.length > 1 ? "e" : ""}).`);
-        notify({ kat: "spiel", an: "alle", tab: "stand", titel: "Live-Spieltag läuft", text: `Der Spieltag vom ${fmtDate(s.date)} wird live erfasst – Zwischenstand in der App.` });
-        liveOpen = s.date; liveSetup = null; liveDraw();
-      } catch (e) { go.disabled = false; lvMsg("Starten fehlgeschlagen: " + (e.message || e.code), true); }
-    };
-    act.append(go, el("span", "msg", "")); act.lastChild.id = "lvMsg"; body.append(act);
-  }
-  // Ergebnis in das normale Formular „Spieltag erfassen“ übernehmen (dort prüfen und speichern)
-  function liveToEntry(l) {
-    const { tot } = liveTotals(l);
-    liveClose(); editing = null; placeTouched = {}; feeTouched = {}; $("confirmBox").hidden = true;
-    resetInputs(); $("fDate").value = l.date; entryUnit = "points"; render();
-    const present = new Set(Object.keys(tot));
-    entryPlayers().forEach(p => {
-      const s = $("s-" + p.id), a = $("a-" + p.id); if (!s) return;
-      if (present.has(p.id)) s.value = String(tot[p.id]).replace(".", ",");
-      else if (isMember(p.id) && a) { a.checked = true; a.closest(".pin").classList.add("away"); }
-      hintConv(p.id);
-    });
-    if (!$("fNote").value) $("fNote").value = `Live erfasst: ${(liveGames[l.id] || []).length} Spiele`;
-    autoPlaces(); liveTransfer = l.id;
-    say("Aus dem Live-Spieltag übernommen – bitte prüfen und speichern."); openEntry();
-  }
-  function liveDone(date) {
-    if (liveTransfer !== date) return; liveTransfer = null;
-    const l = lives.find(x => x.id === date); if (!l) return;
-    liveRef(date).update({ status: "fertig", ende: Date.now() }).catch(() => {});
-    setTimeout(() => logChange("live", `Live-Spieltag ${fmtDate(date)} ins Spielbuch übernommen (${(liveGames[date] || []).length} Spiele).`), 20);
-  }
-  $("lvClose").onclick = liveClose;
-  $("lv").addEventListener("click", e => { if (e.target === $("lv")) liveClose(); });
-
   // ---------- Änderungsprotokoll: wer hat wann was geändert ----------
-  // Sammlung „protokoll“: { zeit, uid, name, art: spieltag|zahlung|live|regeln|sonst, text }
+  // Sammlung „protokoll“: { zeit, uid, name, art: spieltag|zahlung|regeln|sonst, text }
   function logChange(art, text) {
     if (!db || !text) return;
     try { db.collection("protokoll").doc().set({ zeit: Date.now(), uid: ME().uid, name: myName(), art, text: String(text).slice(0, 600) }).catch(() => {}); } catch {}
@@ -3732,7 +3428,7 @@ body[data-tab="regel"] .live-bar,body[data-tab="plan"] .live-bar,body[data-tab="
     if ((a.note || "") !== (b.note || "")) out.push("Notiz geändert");
     return out;
   }
-  const PROTO_ART = [["alle", "Alle"], ["spieltag", "Spieltage"], ["zahlung", "Zahlungen"], ["live", "Live"], ["regeln", "Regeln"]];
+  const PROTO_ART = [["alle", "Alle"], ["spieltag", "Spieltage"], ["zahlung", "Zahlungen"], ["regeln", "Regeln"]];
   let protoUnsub = null, protoItems = [], protoFilter = "alle";
   function protoOpen() {
     if (!db) return;
@@ -3742,7 +3438,7 @@ body[data-tab="regel"] .live-bar,body[data-tab="plan"] .live-bar,body[data-tab="
     }, e => { $("lgBody").textContent = "Protokoll nicht verfügbar: " + (e.message || e.code); });
     protoDraw(); setTimeout(() => $("lgClose").focus(), 0);
   }
-  function protoClose() { $("lg").hidden = true; if ($("em").hidden && $("lv").hidden && !detailPid) document.body.style.overflow = ""; }
+  function protoClose() { $("lg").hidden = true; if ($("em").hidden && !detailPid) document.body.style.overflow = ""; }
   function protoDraw() {
     const f = $("lgFilter"); f.textContent = "";
     PROTO_ART.forEach(([k, t]) => { const b = el("button", "rx-ftab" + (protoFilter === k ? " on" : ""), t); b.type = "button"; b.onclick = () => { protoFilter = k; protoDraw(); }; f.append(b); });
@@ -3786,12 +3482,10 @@ body[data-tab="regel"] .live-bar,body[data-tab="plan"] .live-bar,body[data-tab="
         const rows = (widgetRanked || []).filter(s => s.placed && !s.p.guest).slice(0, 5).map((s, i) => ({ r: i + 1, n: s.p.name, v: `PS ${s.placeSum}`, me: s.p.id === myPid() }));
         const t = todayIso(), next = planItems.filter(it => it.typ === "termin" && it.datum && it.datum >= t).sort((a, b) => (a.datum + (a.zeit || "")).localeCompare(b.datum + (b.zeit || "")))[0];
         const pid = myPid(), open = pid ? games.reduce((a, g) => a + openAmt(g, pid), 0) : 0;
-        const live = liveRun()[0];
         window.AndroidApp.updateWidget(JSON.stringify({
           titel: "KSV 08/15", zeitraum: widgetLabel, rows,
           termin: next ? `${wdate(next.datum)}${next.zeit ? ", " + next.zeit + " Uhr" : ""} · ${next.titel || "Termin"}` : "Kein Termin geplant",
           offen: pid ? (open > 0 ? `Offen: ${eur(open)}` : "Nichts offen") : "",
-          live: live ? `Live: Spieltag ${fmtDate(live.date)} läuft` : "",
           stand: new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
         }));
       } catch {}
@@ -3845,7 +3539,6 @@ body[data-tab="regel"] .live-bar,body[data-tab="plan"] .live-bar,body[data-tab="
   window.__ksvTabBack = () => {
     if (emoClose) { emoClose(); return true; }
     if (!$("lg").hidden) { protoClose(); return true; }
-    if (!$("lv").hidden) { liveClose(); return true; }
     if (pcMenuClose) { pcMenuClose(); return true; }
     if (!$("acctMenu").hidden) { menuClose(); return true; }
     if (!$("planEd").hidden) { planEdClose(); return true; }
@@ -3867,7 +3560,7 @@ body[data-tab="regel"] .live-bar,body[data-tab="plan"] .live-bar,body[data-tab="
     const w = u ? await u.can("data.write") : null;
     if (w === false) { canWrite = false; $("entryHint").textContent = "Du kannst das Spielbuch ansehen, aber nichts eintragen."; }
     document.body.classList.toggle("ro", !canWrite);
-    planStart(); liveStart();
+    planStart();
     let firstCfg = true;
     db.doc("config/main").onSnapshot(s => {
       cfg = s.exists ? { ...DEFAULT_CFG, ...JSON.parse(JSON.stringify(s.data())) } : { ...DEFAULT_CFG };

@@ -45,20 +45,6 @@
         android:textColor="#FFA8A296"
         android:textSize="11sp" />
     <TextView
-        android:id="@+id/w_live"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="6dp"
-        android:background="@drawable/widget_live"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
-        android:paddingTop="2dp"
-        android:paddingBottom="2dp"
-        android:textColor="#FFFFFFFF"
-        android:textSize="12sp"
-        android:textStyle="bold"
-        android:visibility="gone" />
-    <TextView
         android:id="@+id/w_empty"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
