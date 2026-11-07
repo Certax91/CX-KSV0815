@@ -1255,24 +1255,25 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     const rated = list.filter(g => !g.excluded);
     const ps = playersInView(list), maxPl = Math.max(0, ...rated.flatMap(g => Object.values(g.places || {})));
     return ps.map(p => {
-      let total = V0(), fees = 0, feeN = 0, open = 0, owe = 0, lasts = 0, missed = 0, placedW = 0, n = 0, paid = 0, placeSum = 0, placed = 0, best = null, worst = null;
+      let total = V0(), fees = 0, feeN = 0, open = 0, owe = 0, lasts = 0, missed = 0, missedF = 0, nP = 0, nF = 0, placedW = 0, n = 0, paid = 0, placeSum = 0, placed = 0, best = null, worst = null;
       const cnt = Array(Math.max(maxPl, 1)).fill(0);
       list.forEach(g => {
         const away0 = isAbsent(g, p.id), pl0 = g.places?.[p.id];
-        if (away0) missed++;   // Fehlen wird separat gezählt, nie als letzter Platz
+        if (away0) { if (g.excluded) missedF++; else missed++; }   // Fehlen getrennt nach Pflichttagen (Saisonwertung) und freien Tagen, nie als letzter Platz
         else if (!g.excluded && pl0 && pl0 > 1 && pl0 === worstOf(g)) lasts++;
         if (!g.excluded) { const pl = g.places?.[p.id]; if (pl) { const w = g.double ? 2 : 1; placeSum += pl * w; placedW += w; placed++; cnt[pl - 1] = (cnt[pl - 1] || 0) + 1; } }
         owe += openAmt(g, p.id);
         const f = feeOf(g, p.id); if (f != null) { fees += f; feeN++; } else if (!p.guest && !p.hidden && (g.scores?.[p.id] != null || g.places?.[p.id])) open++;
         const m = money(g, p.id); if (m != null) { total = addV(total, m); paid++; }
         if (m == null || isAbsent(g, p.id)) return;
-        n++;
+        n++; if (g.excluded) nF++; else nP++;
         if (!best || better(m.m, best.m.m)) best = { m, d: g.date };
         if (!worst || better(worst.m.m, m.m)) worst = { m, d: g.date };
       });
-      return { p, total, fees, feeN, open, owe, lasts, missed, n, paid, placed, act: n || placed || paid || feeN, placeSum,
+      const dP = list.filter(g => !g.excluded).length, dF = list.length - dP;
+      return { p, total, fees, feeN, open, owe, lasts, missed, missedF, nP, nF, dP, dF, n, paid, placed, act: n || placed || paid || feeN, placeSum,
                avgPlace: placedW ? placeSum / placedW : null, cnt, wins: cnt[0] || 0,
-               share: list.length ? n / list.length : 0, avg: paid ? divV(total, paid) : null, best, worst };
+               share: dP ? nP / dP : 0, shareF: dF ? nF / dF : 0, avg: paid ? divV(total, paid) : null, best, worst };
     });
   }
 
@@ -1442,7 +1443,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     const oweTot = st.reduce((a, s) => a + s.owe, 0), oweWho = st.filter(s => s.owe > 0).map(s => s.p.name);
     tile("Offene Beträge", eur(oweTot), oweTot ? oweWho.join(", ") : "alles bezahlt");
     tile("Monatsbeiträge", eur(feeTot), openN ? `${openN}× nicht eingetragen` : (feeTot ? "vollständig" : ""));
-    tile("Spieltage", String(list.length), [parts ? `${parts} Teilnahmen` : "", excl ? `${excl} ohne Wertung` : ""].filter(Boolean).join(" · "));
+    tile("Spieltage", String(list.length), [excl ? `${list.length - excl} Pflichttage · ${excl} ohne Wertung` : "alle mit Saisonwertung", parts ? `${parts} Teilnahmen` : ""].filter(Boolean).join(" · "));
     tile("Ø Spielgeld je Spieltag", list.length ? show(divV(total, list.length)) : "–", parts ? `Ø ${show(divV(total, parts))} je Spieler` : "");
     tile("Teuerster Abend", topK ? show(topK.m) : "–", topK ? fmtDate(topK.d) : "");
     tile("Günstigster Abend", lowK ? show(lowK.m) : "–", lowK ? fmtDate(lowK.d) : "");
@@ -1451,8 +1452,14 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     tile("Meiste Siege", winners.length ? winners.join(", ") : "–", winners.length ? `je ${maxW}× Platz 1${winners.length > 1 ? " · geteilt" : ""}` : "");
     const lL = leaders(st, "lasts"), mM = leaders(st.filter(s => !s.p.guest), "missed"), mL = leaders(st.filter(s => !s.p.guest), "missed", true);
     tile("Meiste letzte Plätze", lL ? lL.names.join(", ") : "–", lL ? `${lL.names.length > 1 ? "je " : ""}${lL.v}× Letzter (ohne Fehlen)` : "noch kein letzter Platz");
-    tile("Am meisten gefehlt", mM ? mM.names.join(", ") : "–", mM ? `${mM.names.length > 1 ? "je " : ""}${mM.v}× gefehlt` : "noch niemand gefehlt");
-    tile("Am wenigsten gefehlt", mL ? mL.names.join(", ") : "–", mL ? (mL.v ? `${mL.names.length > 1 ? "je " : ""}${mL.v}× gefehlt` : "nie gefehlt") : "");
+    const nPf = list.filter(g => !g.excluded).length, nFr = list.length - nPf, ofP = nPf ? ` von ${nPf} Pflichttagen` : "";
+    tile("Am meisten gefehlt", mM ? mM.names.join(", ") : "–", mM ? `${mM.names.length > 1 ? "je " : ""}${mM.v}× gefehlt${ofP}` : (nPf ? "an Pflichttagen noch niemand gefehlt" : "keine Pflichttage im Zeitraum"));
+    tile("Am wenigsten gefehlt", mL && nPf ? mL.names.join(", ") : "–", mL && nPf ? (mL.v ? `${mL.names.length > 1 ? "je " : ""}${mL.v}× gefehlt${ofP}` : "an keinem Pflichttag gefehlt") : "");
+    if (nFr) {
+      const fM = leaders(st.filter(s => !s.p.guest), "nF"), fL = leaders(st.filter(s => !s.p.guest), "nF", true);
+      tile("Freie Tage: am öftesten dabei", fM && fM.v ? fM.names.join(", ") : "–", fM && fM.v ? `${fM.names.length > 1 ? "je " : ""}${fM.v}× von ${nFr} Tagen ohne Wertung` : "");
+      tile("Freie Tage: am seltensten dabei", fL ? fL.names.join(", ") : "–", fL ? `${fL.names.length > 1 ? "je " : ""}${fL.v}× von ${nFr} Tagen ohne Wertung` : "");
+    }
     renderChart(days);
     renderStatTable(st);
   }
@@ -1503,7 +1510,8 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     const cols = [
       { k: "name", h: "Spieler", v: s => s.p.name, txt: s => s.p.name },
       { k: "n", h: "Spieltage", v: s => s.n, txt: s => String(s.n), good: "max" },
-      { k: "share", h: "Teilnahme", v: s => s.share, txt: s => nf0.format(s.share * 100) + " %", good: "max" },
+      { k: "share", h: "Teilnahme Pflicht", v: s => s.share, txt: s => s.dP ? nf0.format(s.share * 100) + " %" : "–", good: "max" },
+      ...(st.some(s => s.dF) ? [{ k: "nF", h: "Freie Tage", v: s => s.nF, txt: s => `${s.nF} / ${s.dF}`, good: "max" }] : []),
       { k: "total", h: "Spielgeld €", v: s => s.total.m, txt: s => eur(s.total.m), good: lowGood ? "min" : "max" },
       { k: "totalP", h: "Spielgeld Punkte", v: s => s.total.p, txt: s => pts(s.total.p), good: lowGood ? "min" : "max" },
       { k: "fees", h: "Beiträge", v: s => s.fees, txt: s => eur(s.fees) },
@@ -1513,7 +1521,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
       { k: "placeSum", h: "Platzsumme", v: s => s.placed ? s.placeSum : 9999, txt: s => s.placed ? String(s.placeSum) : "–", good: "min" },
       { k: "avgPlace", h: "Ø Platz", v: s => s.avgPlace ?? 99, txt: s => s.avgPlace ? nf1.format(Math.round(s.avgPlace * 100) / 100) : "–", good: "min" },
       { k: "lasts", h: "Letzter", v: s => s.lasts, txt: s => String(s.lasts) },
-      { k: "missed", h: "Gefehlt", v: s => s.missed, txt: s => String(s.missed) },
+      { k: "missed", h: "Gefehlt Pflicht", v: s => s.missed, txt: s => String(s.missed) },
       { k: "winRate", h: "Siegquote", v: s => s.placed ? s.wins / s.placed : 0, txt: s => s.placed ? nf0.format(s.wins / s.placed * 100) + " %" : "–", good: "max" },
       { k: "best", h: "Bester Abend", v: s => s.best ? val(s.best.m) : 0, txt: s => s.best ? `${show(s.best.m)} · ${shortDate(s.best.d)}` : "–" },
       { k: "worst", h: "Schwächster Abend", v: s => s.worst ? val(s.worst.m) : 0, txt: s => s.worst ? `${show(s.worst.m)} · ${shortDate(s.worst.d)}` : "–" },
@@ -2143,8 +2151,8 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     tile("Platzsumme", s.placed ? String(s.placeSum) : "–", s.avgPlace ? `Ø Platz ${nf1.format(Math.round(s.avgPlace * 10) / 10)}` : "");
     tile("Siege", String(s.wins), s.placed ? `Podest ${(s.cnt[0] || 0) + (s.cnt[1] || 0) + (s.cnt[2] || 0)}× · Quote ${nf0.format(s.wins / s.placed * 100)} %` : "");
     tile("Letzte Plätze", String(s.lasts || 0), "ohne Fehltage");
-    tile("Gefehlt", String(s.missed || 0), list.length ? `von ${list.length} Spieltagen` : "");
-    tile("Spieltage", String(s.n), `Teilnahme ${nf0.format(s.share * 100)} %`);
+    tile("Gefehlt", String(s.missed || 0), s.dP ? `von ${s.dP} Pflichttagen` : "keine Pflichttage");
+    tile("Spieltage", String(s.n), [s.dP ? `Pflicht ${s.nP || 0}/${s.dP} (${nf0.format(s.share * 100)} %)` : "", s.dF ? `frei ${s.nF || 0}/${s.dF}` : ""].filter(Boolean).join(" · "));
     tile("Spielgeld", s.paid ? show(s.total) : "–", s.avg ? `Ø ${show(s.avg)} je Abend` : "");
     tile("Beiträge", eur(s.fees), `Gesamt ${eur(s.total.m + s.fees)}`);
     tile("Bester Abend", s.best ? show(s.best.m) : "–", s.best ? fmtDate(s.best.d) : "");
@@ -2407,15 +2415,15 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
       { k: "Spielgeld", n: show(total), d: other(total) },
       { k: "Monatsbeiträge", n: eur(feeTot) },
       { k: "Offene Beträge", n: eur(oweTot), d: oweTot ? st.filter(s => s.owe > 0).map(s => s.p.name).join(", ") : "alles bezahlt", color: oweTot ? PC.red : PC.ink },
-      { k: "Spieltage", n: String(list.length), d: `${parts} Teilnahmen` },
+      { k: "Spieltage", n: String(list.length), d: (() => { const e = list.filter(g => g.excluded).length; return e ? `${list.length - e} Pflicht · ${e} ohne Wertung` : `${parts} Teilnahmen`; })() },
       { k: "Ø Spielgeld je Spieltag", n: list.length ? show(divV(total, list.length)) : "–", d: parts ? `Ø ${show(divV(total, parts))} je Spieler` : "" },
       { k: "Teuerster Abend", n: topK ? show(topK.m) : "–", d: topK ? fmtDate(topK.d) : "" },
       { k: "Günstigster Abend", n: lowK ? show(lowK.m) : "–", d: lowK ? fmtDate(lowK.d) : "" },
       { k: "Meiste Siege", n: winners.length ? winners.join(", ") : "–", d: winners.length ? `je ${maxW}× Platz 1` : "" },
       ...(() => { const lL = leaders(st, "lasts"), mM = leaders(st.filter(s => !s.p.guest), "missed"), mL = leaders(st.filter(s => !s.p.guest), "missed", true);
         return [{ k: "Meiste letzte Plätze", n: lL ? lL.names.join(", ") : "–", d: lL ? `${lL.names.length > 1 ? "je " : ""}${lL.v}× Letzter (ohne Fehlen)` : "" },
-          { k: "Am meisten gefehlt", n: mM ? mM.names.join(", ") : "–", d: mM ? `${mM.names.length > 1 ? "je " : ""}${mM.v}× gefehlt` : "noch niemand gefehlt" },
-          { k: "Am wenigsten gefehlt", n: mL ? mL.names.join(", ") : "–", d: mL ? (mL.v ? `${mL.names.length > 1 ? "je " : ""}${mL.v}× gefehlt` : "nie gefehlt") : "" }]; })(),
+          { k: "Am meisten gefehlt", n: mM ? mM.names.join(", ") : "–", d: mM ? `${mM.names.length > 1 ? "je " : ""}${mM.v}× an Pflichttagen` : "an Pflichttagen niemand gefehlt" },
+          { k: "Am wenigsten gefehlt", n: mL ? mL.names.join(", ") : "–", d: mL ? (mL.v ? `${mL.names.length > 1 ? "je " : ""}${mL.v}× an Pflichttagen` : "an keinem Pflichttag gefehlt") : "" }]; })(),
     ]);
 
     h2("Tabelle");
@@ -2471,8 +2479,8 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
         { k: "Platzsumme", n: s.placed ? String(s.placeSum) : "–", d: s.avgPlace ? `Ø Platz ${nf1.format(Math.round(s.avgPlace * 10) / 10)}` : "", gold: true },
         { k: "Siege", n: String(s.wins), d: s.placed ? `Podest ${(s.cnt[0] || 0) + (s.cnt[1] || 0) + (s.cnt[2] || 0)}× · Quote ${nf0.format(s.wins / s.placed * 100)} %` : "" },
         { k: "Letzte Plätze", n: String(s.lasts || 0), d: "ohne Fehltage" },
-        { k: "Gefehlt", n: String(s.missed || 0), d: `von ${list.length} Spieltagen` },
-        { k: "Spieltage", n: String(s.n), d: `Teilnahme ${nf0.format(s.share * 100)} %` },
+        { k: "Gefehlt", n: String(s.missed || 0), d: s.dP ? `von ${s.dP} Pflichttagen` : "keine Pflichttage" },
+        { k: "Spieltage", n: String(s.n), d: [s.dP ? `Pflicht ${s.nP || 0}/${s.dP}` : "", s.dF ? `frei ${s.nF || 0}/${s.dF}` : ""].filter(Boolean).join(" · ") },
         { k: "Gesamt", n: eur(s.total.m + s.fees), d: `Spielgeld ${eur(s.total.m)} + Beiträge ${eur(s.fees)}` },
         { k: "Ø je Abend", n: s.avg ? show(s.avg) : "–" },
         { k: "Bester Abend", n: s.best ? show(s.best.m) : "–", d: s.best ? fmtDate(s.best.d) : "" },
@@ -3674,7 +3682,9 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     const rated = list.filter(g => !g.excluded), nDays = list.length;
     const rows = [
       ["Spieltage", s => s.n, v => String(v), "high"],
-      ["Teilnahme", s => nDays ? s.n / nDays : 0, v => Math.round(v * 100) + " %", "high"],
+      ["Teilnahme Pflichttage", s => s.dP ? s.share : null, v => v == null ? "–" : Math.round(v * 100) + " %", "high"],
+      ["Gefehlt (Pflicht)", s => s.missed, v => String(v), "low"],
+      ...(S.some(s => s.dF) ? [["Freie Tage dabei", s => s.nF, (v, s) => `${v} von ${s.dF}`, "high"]] : []),
       [cfg.view === "points" ? "Punkte gesamt" : "Spielgeld gesamt", s => val(s.total), (v, s) => show(s.total), cfg.dir],
       ["Ø je Spieltag", s => s.avg ? val(s.avg) : null, (v, s) => s.avg ? show(s.avg) : "–", cfg.dir],
       ["Platzsumme", s => s.placed ? s.placeSum : null, v => v == null ? "–" : String(v), "low"],
