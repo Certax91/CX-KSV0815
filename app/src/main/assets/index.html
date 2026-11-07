@@ -745,6 +745,66 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
 .off-bar{position:fixed;top:env(safe-area-inset-top,0px);left:50%;transform:translateX(-50%);z-index:70;width:max-content;max-width:calc(100% - 24px);background:#5f5b53;color:#fff;font-size:12.5px;font-weight:600;text-align:center;padding:6px 14px;border-radius:0 0 12px 12px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
 .off-bar.ok{background:#2e7d32}
 .off-bar[hidden]{display:none}
+/* ---------- Mehrfachauswahl ---------- */
+.pselect.drop{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
+.pselect.drop.on{color:var(--bg)}
+.pselect.drop::after{content:"";width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px);opacity:.7}
+.pselect.drop:disabled{opacity:.5;cursor:default}
+#cmpPick[hidden]{display:none}
+.mp-pop{position:absolute;z-index:80;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.25);padding:8px;display:flex;flex-direction:column;gap:6px;animation:tabIn .12s ease-out}
+.mp-head{display:flex;align-items:center;gap:6px;padding:2px 4px}
+.mp-head b{flex:1;font-size:14px}
+.mp-q{border:1px solid var(--line);background:none;color:var(--ink);border-radius:999px;padding:3px 10px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.mp-list{max-height:min(50vh,340px);overflow-y:auto;display:flex;flex-direction:column;overscroll-behavior:contain}
+.mp-it{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:8px;cursor:pointer}
+.mp-it:hover{background:var(--surface)}
+.mp-it input{width:18px;height:18px;accent-color:var(--gold);flex:none}
+.mp-it span{display:flex;flex-direction:column;font-weight:600;font-size:14.5px}
+.mp-it small{font-weight:400;font-size:12px;color:var(--muted)}
+.mp-ok{align-self:stretch;padding:9px}
+/* ---------- Gesamtwertung im Vergleich ---------- */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+@media (max-width:640px){
+  .cgrid{grid-template-columns:1fr 1fr;gap:8px}
+  .cgrid .pcard{padding:10px 11px;gap:4px}
+  .cgrid .pcard .total{font-size:22px}
+  .cgrid .pcard dl{font-size:12px} .cgrid .pcard dd{font-size:13px}
+  .cgrid .medals span{font-size:10.5px}
+}
+/* ---------- Spielervergleich ---------- */
+body:not([data-tab="stat"]) #secVs{display:none!important}
+#secVs{border-top:2px solid var(--line);padding-top:14px}
+.vs-pick{align-self:flex-start;padding:7px 14px;font-size:14px}
+.vs-body{display:flex;flex-direction:column;gap:12px}
+.vs-chips{display:flex;flex-wrap:wrap;gap:6px}
+.vs-chip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--c);background:color-mix(in srgb,var(--c) 12%,transparent);color:var(--ink);border-radius:999px;padding:4px 10px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.vs-chip i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.vs-chip span{color:var(--muted);font-weight:400;margin-left:2px}
+.vs-table{font-size:13.5px}
+.vs-table th,.vs-table td{padding:6px 8px}
+.vs-table td{white-space:pre-line;line-height:1.25}
+.vs-table tbody th{font-family:inherit;font-size:12.5px;white-space:normal;line-height:1.2;min-width:78px;max-width:96px}
+.vs-table th,.vs-table td{padding:6px 6px}
+.vs-table thead th{font-size:13px;letter-spacing:0}
+.vs-table th[scope="col"]{border-bottom:3px solid var(--c);text-align:right;white-space:nowrap}
+.vs-table td{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.vs-table th[scope="row"]{text-align:left;font-weight:600;color:var(--muted);white-space:nowrap}
+.vs-table td.best{font-weight:800;color:var(--gold-ink);background:var(--gold-soft)}
+.vs-h2h{display:flex;flex-direction:column;gap:8px}
+.vs-h2h .ct{margin:0}
+.h2h-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:4px 10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px}
+.h2h-n{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.h2h-n:last-of-type{text-align:right}
+.h2h-n.win{font-weight:800}
+.h2h-n::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--c);margin-right:6px}
+.h2h-s{font-family:var(--f-num);font-size:18px}
+.h2h-bar{grid-column:1/-1;display:flex;height:6px;border-radius:3px;overflow:hidden;gap:2px;background:var(--surface)}
+.h2h-row small{grid-column:1/-1;font-size:12px;color:var(--muted);text-align:center}
+.vs-chart{position:relative}
+.vs-legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;margin-top:4px}
+.vs-legend span{display:inline-flex;align-items:center;gap:6px}
+.vs-legend i,.vs-tl i{width:14px;height:3px;border-radius:2px;background:var(--c);display:inline-block}
+.vs-tl{display:flex;align-items:center;gap:6px}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -864,12 +924,13 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
         <button type="button" id="cmpS" aria-pressed="false">Saisons</button>
         <button type="button" id="cmpY" aria-pressed="false">Jahre</button>
       </div>
+      <button type="button" class="pselect drop on" id="cmpPick" aria-haspopup="dialog" aria-expanded="false" hidden>Auswahl</button>
     </div>
     <div class="grp period">
       <span class="label">Zeitraum</span>
       <button type="button" class="chip" id="pAll" aria-pressed="true">Alle</button>
-      <select class="pselect" id="pSeason" aria-label="Saison wählen"></select>
-      <select class="pselect" id="pYear" aria-label="Jahr wählen"></select>
+      <button type="button" class="pselect drop" id="pSeason" aria-haspopup="dialog" aria-expanded="false">Saison</button>
+      <button type="button" class="pselect drop" id="pYear" aria-haspopup="dialog" aria-expanded="false">Jahr</button>
       <button type="button" class="chip" id="pRange" aria-pressed="false">Eigener Zeitraum</button>
       <span class="range" id="rangeBox" hidden>
         <label for="rFrom">von</label><input type="date" id="rFrom">
@@ -903,7 +964,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     <div class="sechead"><h2 id="cTitle">Vergleich</h2><span class="msg" id="cSub"></span></div>
     <div class="kpis" id="cKpis"></div>
     <div class="sechead"><h2>Gesamtwertung</h2><span class="msg" id="cRankNote"></span></div>
-    <div class="standings" id="cCards"></div>
+    <div class="cgrid" id="cCards"></div>
     <div class="chartbox"><div class="chart-head"><p class="ct" id="cChartTitle">Kasse</p>
         <label class="excl" for="cFees" style="padding:0;font-size:13px"><input type="checkbox" id="cFees"> Monatsbeiträge mit anzeigen</label></div>
       <div id="cChart"></div><div class="tip" hidden></div>
@@ -912,6 +973,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     <div class="tablebox"><table id="cMatrix"></table></div>
     
   </section>
+
 
   <section id="secStat" aria-labelledby="h-stat" style="display:flex;flex-direction:column;gap:16px">
     <div class="sechead"><h2 id="h-stat">Statistik</h2><span class="msg" id="statRange"></span></div>
@@ -924,6 +986,11 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     </div>
     <div class="tablebox"><table id="statTable"></table></div>
     
+  </section>
+  <section id="secVs" aria-labelledby="h-vs" style="display:flex;flex-direction:column;gap:12px">
+    <div class="sechead"><h2 id="h-vs">Spielervergleich</h2><span class="msg" id="vsRange"></span></div>
+    <button type="button" class="pselect drop vs-pick" id="vsPick" aria-haspopup="dialog" aria-expanded="false">Spieler auswählen</button>
+    <div id="vsBody" class="vs-body"></div>
   </section>
 
 
@@ -1126,34 +1193,35 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
   const seasonsSorted = () => [...(cfg.seasons || [])].filter(x => x.start && x.end).sort((a, b) => b.start.localeCompare(a.start));
   function renderPeriod() {
     const years = [...new Set(games.map(g => g.date.slice(0, 4)))].sort().reverse(), ss = seasonsSorted();
-    if (season.startsWith("s:") && !ss.some(x => "s:" + x.id === season)) season = "all";
-    if (season.startsWith("y:") && !years.includes(season.slice(2))) season = "all";
-    const fill = (sel, ph, items) => {
-      sel.textContent = ""; const o = el("option", null, ph); o.value = ""; sel.append(o);
-      items.forEach(([v, t, title]) => { const x = el("option", null, t); x.value = v; if (title) x.title = title; sel.append(x); });
-    };
-    fill($("pSeason"), ss.length ? "Saison …" : "Saison (keine angelegt)", [...(ss.length ? [["cmp:s", "Alle Saisons im Vergleich"]] : []), ...ss.map(x => ["s:" + x.id, seasonName(x), `${fmtDate(x.start)} – ${fmtDate(x.end)}`])]);
-    fill($("pYear"), "Jahr …", [...(years.length ? [["cmp:y", "Alle Jahre im Vergleich"]] : []), ...years.map(y => ["y:" + y, y])]);
-    const inS = season.startsWith("s:") || season === "cmp:s", inY = season.startsWith("y:") || season === "cmp:y";
-    $("pSeason").value = inS ? season : ""; $("pYear").value = inY ? season : "";
-    $("pSeason").classList.toggle("on", inS); $("pYear").classList.toggle("on", inY);
+    if (season.startsWith("s:")) { const l = selList("s:").filter(id => ss.some(x => x.id === id)); season = l.length ? "s:" + l.join(",") : "all"; }
+    if (season.startsWith("y:")) { const l = selList("y:").filter(y => years.includes(y)); season = l.length ? "y:" + l.join(",") : "all"; }
+    const sl = selList("s:"), yl = selList("y:");
+    $("pSeason").textContent = !ss.length ? "Saison (keine angelegt)" : sl.length === 1 ? seasonName(ss.find(x => x.id === sl[0])) : sl.length ? `${sl.length} Saisons` : "Saison";
+    $("pYear").textContent = yl.length === 1 ? yl[0] : yl.length ? `${yl.length} Jahre` : "Jahr";
+    $("pSeason").classList.toggle("on", sl.length > 0); $("pYear").classList.toggle("on", yl.length > 0);
     $("pSeason").disabled = !ss.length;
+    // Vergleichsansicht: welche Saisons bzw. Jahre verglichen werden
+    const cp = $("cmpPick"); cp.hidden = !isCmp();
+    if (isCmp()) { const all = cmpGroupsAll(), on = cmpGroups(); cp.textContent = `${on.length} von ${all.length} ${cmpWords()}`; }
     $("pAll").setAttribute("aria-pressed", String(season === "all")); $("pRange").setAttribute("aria-pressed", String(season === "range"));
     $("rangeBox").hidden = season !== "range";
   }
+  const selList = pre => season.startsWith(pre) ? season.slice(pre.length).split(",").filter(Boolean) : [];
   function inPeriod(d) {
     if (season === "all") return true;
     if (season === "range") { const a = $("rFrom").value || "0000", b = $("rTo").value || "9999"; return d >= a && d <= b; }
-    if (season.startsWith("s:")) { const x = seasonsSorted().find(q => "s:" + q.id === season); return !x || (d >= x.start && d <= x.end); }
-    if (season.startsWith("y:")) return d.startsWith(season.slice(2));
+    if (season.startsWith("s:")) { const l = selList("s:"), xs = seasonsSorted().filter(q => l.includes(q.id)); return !xs.length || xs.some(x => d >= x.start && d <= x.end); }
+    if (season.startsWith("y:")) return selList("y:").includes(d.slice(0, 4));
     return true;   // Vergleichsansicht: alle Spieltage
   }
   const inSeason = () => games.filter(g => inPeriod(g.date));
   function rangeLabel(list) {
-    if (isCmp()) return `Vergleich aller ${cmpWords()}`;
-    const x = season.startsWith("s:") && seasonsSorted().find(q => "s:" + q.id === season);
+    if (isCmp()) return cmpTitle();
+    const sl = selList("s:"), x = sl.length === 1 && seasonsSorted().find(q => q.id === sl[0]);
     const n = `${list.length} Spieltag${list.length === 1 ? "" : "e"}`;
     if (x) return `${seasonName(x)}: ${fmtDate(x.start)} – ${fmtDate(x.end)} · ${n}`;
+    if (sl.length > 1) return `${seasonsSorted().filter(q => sl.includes(q.id)).map(q => seasonName(q).replace("Saison ", "")).join(", ")} · ${n}`;
+    if (selList("y:").length > 1) return `${selList("y:").join(", ")} · ${n}`;
     if (!list.length) return "Kein Spieltag im Zeitraum";
     const s = [...list].sort((a, b) => a.date.localeCompare(b.date));
     return `${fmtDate(s[0].date)} – ${fmtDate(s[s.length - 1].date)} · ${n}`;
@@ -1804,7 +1872,14 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
   const adj = w => season === "cmp:y" ? w + "s" : w;   // „Teuerste Saison“ / „Teuerstes Jahr“
   const cmpWords = () => season === "cmp:y" ? "Jahre" : "Saisons";
   const rankSort = (a, b) => (!!a.p.guest - !!b.p.guest) || (b.placed > 0) - (a.placed > 0) || a.placeSum - b.placeSum || b.wins - a.wins || (a.avgPlace ?? 99) - (b.avgPlace ?? 99);
+  let cmpSel = { s: null, y: null }; try { cmpSel = { ...cmpSel, ...JSON.parse(localStorage.getItem("ksv-cmpsel") || "{}") }; } catch {}
   function cmpGroups() {
+    const all = cmpGroupsAll(), sel = cmpSel[season === "cmp:y" ? "y" : "s"];
+    if (!sel) return all;
+    const f = all.filter(g => sel.includes(g.key)); return f.length ? f : all;
+  }
+  function cmpTitle() { const n = cmpGroups().length, a = cmpGroupsAll().length; return n === a ? `Vergleich aller ${cmpWords()}` : `Vergleich von ${n} ${n === 1 ? cmpWord() : cmpWords()}`; }
+  function cmpGroupsAll() {
     if (season === "cmp:y") return [...new Set(games.map(g => g.date.slice(0, 4)))].sort().map(y => ({ key: y, label: y, short: y, sub: `01.01.${y} – 31.12.${y}`, games: games.filter(g => g.date.startsWith(y)) }));
     return [...seasonsSorted()].reverse().map(x => ({ key: x.id, label: seasonName(x), short: seasonName(x).replace("Saison ", ""), sub: `${fmtDate(x.start)} – ${fmtDate(x.end)}`,
       games: games.filter(g => g.date >= x.start && g.date <= x.end) })).filter(g => g.games.length);
@@ -1856,7 +1931,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     ["secStand", "secBook", "secStat"].forEach(id => $(id).hidden = on); $("secCmp").hidden = !on;
     if (!on) return;
     const { gs, players } = cmpModel(), W1 = cmpWord(), Ws = cmpWords();
-    $("cTitle").textContent = `Vergleich aller ${Ws}`;
+    $("cTitle").textContent = cmpTitle();
     $("cSub").textContent = gs.length ? `${gs.length} ${gs.length === 1 ? W1 : Ws} · je ${W1} zählt nur ${W1 === "Jahr" ? "seine" : "ihre"} Gesamtsumme bzw. Endplatzierung` : (season === "cmp:s" ? "Noch keine Saison mit Spieltagen – Saisons legst du in den Einstellungen an." : "Noch keine Spieltage.");
     // Kennzahlen
     const kp = $("cKpis"); kp.textContent = "";
@@ -2431,9 +2506,9 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     return pdf.output();
   }
   const reportName = () => {
-    const x = season.startsWith("s:") && seasonsSorted().find(q => "s:" + q.id === season);
-    if (isCmp()) return `KSV-0815_Vergleich_alle_${cmpWords()}.pdf`;
-    const part = x ? seasonName(x).replace(/\//g, "-").replace(/\s+/g, "_") : season.startsWith("y:") ? season.slice(2) : season === "range" ? `${$("rFrom").value || "Anfang"}_bis_${$("rTo").value || "heute"}` : "Gesamt";
+    const sl = selList("s:"), xs = seasonsSorted().filter(q => sl.includes(q.id));
+    if (isCmp()) return `KSV-0815_Vergleich_${cmpWords()}.pdf`;
+    const part = xs.length ? xs.map(x => seasonName(x).replace(/\//g, "-").replace(/\s+/g, "_")).join("+") : season.startsWith("y:") ? selList("y:").join("+") : season === "range" ? `${$("rFrom").value || "Anfang"}_bis_${$("rTo").value || "heute"}` : "Gesamt";
     return `KSV-0815_Auswertung_${part}.pdf`;
   };
   async function exportPdf() {
@@ -2451,7 +2526,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     } finally { b.disabled = false; b.textContent = old; }
   }
 
-  function render() { renderDetail(); renderPeriod(); renderCompare(); if (!isCmp()) { renderStandings(); renderBook(); renderStats(); } renderEntry(); renderSettings(); renderRules(); renderSeasonList(); syncTab(); }
+  function render() { renderDetail(); renderPeriod(); renderCompare(); if (!isCmp()) { renderStandings(); renderBook(); renderStats(); } renderVs(); renderEntry(); renderSettings(); renderRules(); renderSeasonList(); syncTab(); }
 
   // ---------- Verdrahtung ----------
   function openEntry() { $("em").hidden = false; document.body.style.overflow = "hidden"; setTimeout(() => { const f = document.querySelector('#pgrid input[data-kind="s"]'); (f && !editing ? f : $("emClose")).focus(); }, 0); }
@@ -2473,8 +2548,13 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
   $("vPoints").onclick = () => { cfg.view = "points"; saveCfg(); render(); };
   $("pAll").onclick = () => { season = "all"; render(); };
   $("pRange").onclick = () => { season = "range"; render(); };
-  $("pSeason").onchange = () => { season = $("pSeason").value || "all"; render(); };
-  $("pYear").onchange = () => { season = $("pYear").value || "all"; render(); };
+  $("pSeason").onclick = () => multiPick($("pSeason"), "Saisons auswerten", seasonsSorted().map(x => ({ v: x.id, label: seasonName(x), sub: `${fmtDate(x.start)} – ${fmtDate(x.end)}` })), selList("s:"),
+    arr => { season = arr.length ? "s:" + arr.join(",") : "all"; render(); });
+  $("pYear").onclick = () => multiPick($("pYear"), "Jahre auswerten", [...new Set(games.map(g => g.date.slice(0, 4)))].sort().reverse().map(y => ({ v: y, label: y })), selList("y:"),
+    arr => { season = arr.length ? "y:" + arr.join(",") : "all"; render(); });
+  $("cmpPick").onclick = () => { const k = season === "cmp:y" ? "y" : "s", all = cmpGroupsAll();
+    multiPick($("cmpPick"), `${cmpWords()} vergleichen`, [...all].reverse().map(g => ({ v: g.key, label: g.label, sub: g.sub })), cmpGroups().map(g => g.key),
+      arr => { cmpSel[k] = arr.length === all.length ? null : arr; try { localStorage.setItem("ksv-cmpsel", JSON.stringify(cmpSel)); } catch {} render(); }); };
   $("cFees").onchange = () => { try { localStorage.setItem("ksv-cfees", $("cFees").checked ? "1" : ""); } catch {} renderCompare(); };
   try { $("cFees").checked = localStorage.getItem("ksv-cfees") === "1"; } catch {}
   $("chFees").onchange = () => { try { localStorage.setItem("ksv-chfees", $("chFees").checked ? "1" : ""); } catch {} renderStats(); };
@@ -3492,6 +3572,141 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
     }, 800);
   }
 
+  // ---------- Mehrfachauswahl (Saisons, Jahre, Spieler) als Aufklapp-Liste ----------
+  let mpClose = null;
+  function multiPick(btn, title, items, sel, onChange) {
+    if (mpClose) { const same = mpClose.btn === btn; mpClose(); if (same) return; }
+    const pop = el("div", "mp-pop"); pop.setAttribute("role", "dialog"); pop.setAttribute("aria-label", title);
+    const head = el("div", "mp-head"); head.append(el("b", null, title));
+    const all = el("button", "mp-q", "Alle"), none = el("button", "mp-q", "Keine"); all.type = none.type = "button";
+    head.append(all, none); pop.append(head);
+    const list = el("div", "mp-list"); pop.append(list);
+    let cur = [...sel];
+    const draw = () => {
+      list.textContent = "";
+      items.forEach(it => {
+        const lab = el("label", "mp-it"), cb = el("input"); cb.type = "checkbox"; cb.checked = cur.includes(it.v);
+        cb.onchange = () => { cur = cb.checked ? [...cur, it.v] : cur.filter(x => x !== it.v); cur = items.map(i => i.v).filter(v => cur.includes(v)); onChange(cur); };
+        const tx = el("span"); tx.append(el("span", null, it.label)); if (it.sub) tx.append(el("small", null, it.sub));
+        lab.append(cb, tx); list.append(lab);
+      });
+    };
+    all.onclick = () => { cur = items.map(i => i.v); onChange(cur); draw(); };
+    none.onclick = () => { cur = []; onChange(cur); draw(); };
+    draw();
+    const ok = el("button", "btn mp-ok", "Fertig"); ok.type = "button"; pop.append(ok);
+    document.body.append(pop);
+    const r = btn.getBoundingClientRect(), w = Math.min(300, window.innerWidth - 16);
+    pop.style.width = w + "px"; pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + "px";
+    pop.style.top = (r.bottom + window.scrollY + 6) + "px";
+    btn.setAttribute("aria-expanded", "true");
+    const outside = e => { if (!pop.contains(e.target) && !btn.contains(e.target)) close(); };
+    const key = e => { if (e.key === "Escape") { e.stopPropagation(); close(); btn.focus(); } };
+    const close = () => { pop.remove(); btn.setAttribute("aria-expanded", "false"); document.removeEventListener("click", outside, true); document.removeEventListener("keydown", key, true); mpClose = null; };
+    close.btn = btn; ok.onclick = close;
+    setTimeout(() => document.addEventListener("click", outside, true), 0); document.addEventListener("keydown", key, true);
+    mpClose = close;
+  }
+
+  // ---------- Spielervergleich (Mehrfachauswahl) ----------
+  let vsSel = []; try { vsSel = JSON.parse(localStorage.getItem("ksv-vs") || "[]"); } catch {}
+  const VS_COL = ["#C98A12", "#2F6FD6", "#C0392B", "#2E8B57", "#8E44AD", "#D35400", "#16A085", "#6D6D6D"];
+  function vsGames() { return isCmp() ? cmpGroups().flatMap(g => g.games) : inSeason(); }
+  function renderVs() {
+    const box = $("vsBody"); if (!box) return;
+    box.textContent = "";
+    const list = vsGames(), st = stats(list).filter(s => s.act), byId = Object.fromEntries(st.map(s => [s.p.id, s]));
+    vsSel = vsSel.filter(id => cfg.players.some(p => p.id === id));
+    const avail = cfg.players.filter(p => byId[p.id]);
+    // Auswahl
+    const pick = $("vsPick");
+    pick.textContent = vsSel.length ? `${vsSel.length} Spieler ausgewählt` : "Spieler auswählen";
+    pick.onclick = () => multiPick(pick, "Spieler vergleichen", avail.map(p => ({ v: p.id, label: p.name + (p.guest ? " (Gast)" : "") })), vsSel, arr => {
+      vsSel = arr; try { localStorage.setItem("ksv-vs", JSON.stringify(vsSel)); } catch {} renderVs(); });
+    const sel = vsSel.filter(id => byId[id]);
+    const chips = el("div", "vs-chips");
+    sel.forEach((id, i) => { const c = el("button", "vs-chip"); c.type = "button"; c.style.setProperty("--c", VS_COL[i % VS_COL.length]);
+      c.append(el("i"), cfg.players.find(p => p.id === id).name, el("span", null, "×")); c.setAttribute("aria-label", `${cfg.players.find(p => p.id === id).name} entfernen`);
+      c.onclick = () => { vsSel = vsSel.filter(x => x !== id); try { localStorage.setItem("ksv-vs", JSON.stringify(vsSel)); } catch {} renderVs(); }; chips.append(c); });
+    if (sel.length) box.append(chips);
+    $("vsRange").textContent = rangeLabel(list);
+    if (sel.length < 2) { box.append(el("p", "msg", sel.length ? "Wähle mindestens einen weiteren Spieler aus." : "Wähle zwei oder mehr Spieler aus, um sie zu vergleichen.")); return; }
+    const S = sel.map(id => byId[id]);
+    // Kennzahlen nebeneinander, bester Wert hervorgehoben
+    const rated = list.filter(g => !g.excluded), nDays = list.length;
+    const rows = [
+      ["Spieltage", s => s.n, v => String(v), "high"],
+      ["Teilnahme", s => nDays ? s.n / nDays : 0, v => Math.round(v * 100) + " %", "high"],
+      [cfg.view === "points" ? "Punkte gesamt" : "Spielgeld gesamt", s => val(s.total), (v, s) => show(s.total), cfg.dir],
+      ["Ø je Spieltag", s => s.avg ? val(s.avg) : null, (v, s) => s.avg ? show(s.avg) : "–", cfg.dir],
+      ["Platzsumme", s => s.placed ? s.placeSum : null, v => v == null ? "–" : String(v), "low"],
+      ["Ø Platz", s => s.avgPlace, v => v == null ? "–" : nf1.format(Math.round(v * 10) / 10), "low"],
+      ["Siege", s => s.wins, v => String(v), "high"],
+      ["Podest (1.–3.)", s => (s.cnt[0] || 0) + (s.cnt[1] || 0) + (s.cnt[2] || 0), v => String(v), "high"],
+      ["Letzter Platz", s => s.lasts, v => String(v), "low"],
+      ["Bester Abend", s => s.best ? val(s.best.m) : null, (v, s) => s.best ? `${show(s.best.m)}\n${fmtDate(s.best.d)}` : "–", cfg.dir],
+      ["Schwächster Abend", s => s.worst ? val(s.worst.m) : null, (v, s) => s.worst ? `${show(s.worst.m)}\n${fmtDate(s.worst.d)}` : "–", null],
+      ["Monatsbeiträge", s => s.fees, v => eur(v), null],
+      ["Offen", s => s.owe, v => v > 0 ? eur(v) : "–", null]
+    ];
+    const tb = el("div", "tablebox vs-box"), t = el("table", "vs-table"); tb.append(t);
+    const hr = t.createTHead().insertRow(); hr.append(el("th", null, ""));
+    S.forEach((s, i) => { const th = el("th", null, s.p.name); th.style.setProperty("--c", VS_COL[i % VS_COL.length]); th.scope = "col"; hr.append(th); });
+    const body = t.createTBody();
+    rows.forEach(([lab, get, fmt, dir]) => {
+      const r = body.insertRow(), th = el("th", null, lab); th.scope = "row"; r.append(th);
+      const vals = S.map(get), nums = vals.filter(v => v != null);
+      const bestV = !dir || nums.length < 2 ? null : (dir === "high" ? Math.max(...nums) : Math.min(...nums));
+      const allSame = nums.length && nums.every(v => v === nums[0]);
+      S.forEach((s, i) => { const td = r.insertCell(); td.textContent = fmt(vals[i], s); if (bestV != null && !allSame && vals[i] === bestV) td.className = "best"; });
+    });
+    box.append(tb);
+    // Direkter Vergleich: an gemeinsamen Abenden, wer war besser platziert
+    const h2h = el("div", "vs-h2h"); h2h.append(el("p", "ct", "Direkter Vergleich an gemeinsamen Abenden"));
+    for (let a = 0; a < S.length; a++) for (let b = a + 1; b < S.length; b++) {
+      const A = S[a].p.id, B = S[b].p.id; let wa = 0, wb = 0, eq = 0;
+      rated.forEach(g => { const pa = g.places?.[A], pb = g.places?.[B]; if (!pa || !pb || isAbsent(g, A) || isAbsent(g, B)) return; if (pa < pb) wa++; else if (pb < pa) wb++; else eq++; });
+      const n = wa + wb + eq, row = el("div", "h2h-row");
+      const nm = (s, i, w, l) => { const x = el("span", "h2h-n" + (w > l ? " win" : "")); x.style.setProperty("--c", VS_COL[i % VS_COL.length]); x.textContent = s.p.name; return x; };
+      const bar = el("div", "h2h-bar");
+      if (n) { [[wa, a], [eq, -1], [wb, b]].forEach(([v, i]) => { if (!v) return; const sp = el("span"); sp.style.flex = String(v); sp.style.background = i < 0 ? "var(--line)" : VS_COL[i % VS_COL.length]; bar.append(sp); }); }
+      row.append(nm(S[a], a, wa, wb), el("b", "h2h-s", n ? `${wa} : ${wb}` : "–"), nm(S[b], b, wb, wa), bar,
+        el("small", null, n ? `${n} gemeinsame Abende${eq ? ` · ${eq}× gleich platziert` : ""}` : "Keine gemeinsamen Abende mit Platzierung"));
+      h2h.append(row);
+    }
+    box.append(h2h);
+    // Verlauf: Summe über die Spieltage
+    const days = [...list].sort((x, y) => x.date.localeCompare(y.date));
+    if (days.length > 1) {
+      const cb = el("div", "chartbox vs-chart"); cb.append(el("p", "ct", `${cfg.view === "points" ? "Punkte" : "Spielgeld"} aufsummiert über die Spieltage`));
+      const host = el("div"), tip = el("div", "tip"); tip.hidden = true; cb.append(host, tip);
+      const lg = el("div", "vs-legend"); S.forEach((s, i) => { const x = el("span"); x.style.setProperty("--c", VS_COL[i % VS_COL.length]); x.append(el("i"), s.p.name); lg.append(x); }); cb.append(lg);
+      box.append(cb);
+      const series = S.map(s => { let c = 0; return days.map(g => { const m = money(g, s.p.id); if (m != null && !isAbsent(g, s.p.id)) c += val(m); return c; }); });
+      const W = Math.max(320, Math.round(box.clientWidth || 640)), H = 220, L = 52, R = 12, T = 10, B = 26, iw = W - L - R, ih = H - T - B;
+      const max = Math.max(1e-9, ...series.flat()), min = Math.min(0, ...series.flat());
+      const raw = (max - min) / 4, q = Math.pow(10, Math.floor(Math.log10(raw || 1))), step = [1, 2, 2.5, 5, 10].map(z => z * q).find(z => z >= raw) || q;
+      const lo = Math.floor(min / step) * step, top = Math.ceil(max / step) * step, y = v => T + ih - (v - lo) / (top - lo || 1) * ih, x = i => L + (days.length === 1 ? iw / 2 : i / (days.length - 1) * iw);
+      const { s: svg, mk } = svgEl(W, H, `Liniendiagramm: ${S.map(s => s.p.name).join(", ")}`);
+      for (let v = lo; v <= top + 1e-9; v += step) { mk("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: "var(--line)", "stroke-width": 1 });
+        mk("text", { x: L - 6, y: y(v) + 4, "text-anchor": "end", "font-size": 11, fill: "var(--muted)", "font-family": "var(--f-num)" }).textContent = nf1.format(v) + (cfg.view === "points" ? "" : " €"); }
+      const ticks = Math.min(6, days.length);
+      for (let k = 0; k < ticks; k++) { const i = Math.round(k * (days.length - 1) / Math.max(1, ticks - 1)); mk("text", { x: x(i), y: H - 8, "text-anchor": "middle", "font-size": 10.5, fill: "var(--muted)", "font-family": "var(--f-num)" }).textContent = fmtDate(days[i].date).slice(0, 6) + fmtDate(days[i].date).slice(8); }
+      series.forEach((ser, k) => { mk("path", { d: ser.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(""), fill: "none", stroke: VS_COL[k % VS_COL.length], "stroke-width": 2.25, "stroke-linejoin": "round", "stroke-linecap": "round" });
+        mk("circle", { cx: x(ser.length - 1), cy: y(ser[ser.length - 1]), r: 3.5, fill: VS_COL[k % VS_COL.length] }); });
+      const cross = mk("line", { x1: 0, x2: 0, y1: T, y2: T + ih, stroke: "var(--muted)", "stroke-width": 1, "stroke-dasharray": "3 3", visibility: "hidden" });
+      const hit = mk("rect", { x: L, y: T, width: iw, height: ih, fill: "transparent" });
+      const at = e => { const r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * W / r.width; const i = Math.max(0, Math.min(days.length - 1, Math.round((px - L) / iw * (days.length - 1))));
+        cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("visibility", "visible");
+        tipOn(cb, svg, W, x(i), y(Math.max(...series.map(s => s[i]))), []);
+        tip.textContent = ""; tip.append(el("b", null, `Summe bis ${fmtDate(days[i].date)}`));
+        S.map((s, k) => [s, k, series[k][i]]).sort((a, b) => cfg.dir === "low" ? a[2] - b[2] : b[2] - a[2]).forEach(([s, k, v]) => { const d = el("div", "vs-tl"); d.style.setProperty("--c", VS_COL[k % VS_COL.length]); d.append(el("i"), `${s.p.name}: ${cfg.view === "points" ? pts(v) : eur(v)}`); tip.append(d); }); };
+      hit.addEventListener("pointermove", at); hit.addEventListener("pointerdown", at);
+      hit.addEventListener("pointerleave", () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); });
+      host.append(svg);
+    }
+  }
+
   // ---------- Rubriken (Navigationsleiste unten) ----------
   const PANE = { stand: "secStand", book: "secBook", stat: "secStat", regel: "secRegel", plan: "secPlan", set: "settings" };
   let tab = "stand", lastPeriod = "all", prevTab = "stand";
@@ -3537,6 +3752,7 @@ a.lnk{color:var(--gold-ink);text-decoration:underline;word-break:break-word}
   $("cmpY").onclick = () => { season = "cmp:y"; render(); };
   window.__ksvGoTab = goTab;
   window.__ksvTabBack = () => {
+    if (mpClose) { mpClose(); return true; }
     if (emoClose) { emoClose(); return true; }
     if (!$("lg").hidden) { protoClose(); return true; }
     if (pcMenuClose) { pcMenuClose(); return true; }
