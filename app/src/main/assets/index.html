@@ -813,6 +813,15 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
 .ub-t b{font-size:15px} .ub-t span{font-size:13px;color:var(--muted)}
 .ub-a{display:flex;gap:6px;align-items:center}
 .ub-a .btn{padding:8px 14px}
+/* ---------- Planung: wichtig, beendet, archiviert ---------- */
+.plan-h.imp{color:var(--gold-ink);display:flex;align-items:center;gap:6px}
+.plan-h.imp::before{content:"★";font-size:15px}
+.plan-card.imp{border:1.5px solid var(--gold);background:var(--gold-soft);box-shadow:inset 4px 0 0 var(--gold)}
+.pc-imp{display:inline-flex;align-items:center;gap:3px;background:var(--gold);color:#1a1405;border-radius:999px;padding:1px 7px 1px 6px;margin-right:6px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;vertical-align:1px}
+.pc-imp::before{content:"★"}
+.plan-card.archived{opacity:.85}
+.plan-past{display:flex;flex-direction:column}
+.plan-past + .plan-past{margin-top:-4px}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -3002,6 +3011,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
   const stamp = ms => { if (!ms) return ""; const d = new Date(ms); return fmtDate(d.toISOString().slice(0, 10)); };
   const canEditItem = it => ME().admin || it.von === ME().uid;
   let planItems = [], planVotes = {}, planSubs = {}, planStarted = false, planFilter = "alle";
+  const planFold = new Set();   // aufgeklappte Archiv-Abschnitte bleiben beim Neuzeichnen offen
   let planComments = {}, planCSubs = {}, planOpenC = new Set(), planDrafts = {};
   try { planFilter = localStorage.getItem("ksv-planfilter") || "alle"; } catch {}
   const planMsg = (t, err) => { $("planMsg").textContent = t || ""; $("planMsg").classList.toggle("err", !!err); };
@@ -3286,7 +3296,10 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
       else items.push(["In Google Kalender eintragen", () => openExternal(calGoogle(it))], ["In Apple / iPhone Kalender eintragen", () => calApple(it)]);
     }
     if (canEditItem(it)) {
-      if (it.typ === "umfrage") items.push([it.geschlossen ? "Abstimmung wieder öffnen" : "Abstimmung beenden", () => db.collection("planung").doc(it.id).update({ geschlossen: !it.geschlossen, geaendert: Date.now() }).catch(e => planMsg(e.message, true))]);
+      const upd = (data, ok) => db.collection("planung").doc(it.id).update(data).then(() => ok && planMsg(ok)).catch(e => planMsg(e.message, true));
+      items.push([it.wichtig ? "Wichtig-Markierung entfernen" : "Als wichtig markieren", () => upd({ wichtig: !it.wichtig }, it.wichtig ? "Markierung entfernt." : "Als wichtig markiert – steht jetzt ganz oben.")]);
+      if (it.typ === "umfrage") items.push([it.geschlossen ? "Abstimmung wieder öffnen" : "Abstimmung beenden", () => upd({ geschlossen: !it.geschlossen, geaendert: Date.now() })]);
+      if (it.typ === "notiz") items.push([it.archiviert ? "Aus dem Archiv holen" : "Archivieren", () => upd({ archiviert: !it.archiviert }, it.archiviert ? "Notiz wiederhergestellt." : "Notiz archiviert.")]);
       items.push(["Bearbeiten", () => planEdit(it.typ, it)], ["Löschen", () => planDelete(it), "danger"]);
     }
     if (!items.length) return null;
@@ -3310,7 +3323,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     wrap.append(btn); return wrap;
   }
   function planCard(it) {
-    const c = el("article", "plan-card t-" + it.typ + (it.geschlossen ? " closed" : ""));
+    const c = el("article", "plan-card t-" + it.typ + (it.geschlossen ? " closed" : "") + (it.wichtig ? " imp" : "") + (it.archiviert ? " archived" : ""));
     const head = el("div", "pc-head");
     if (it.typ === "termin" && it.datum) {
       const d = new Date(it.datum + "T12:00:00"), cal = el("div", "pc-cal");
@@ -3318,7 +3331,10 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
       head.append(cal);
     }
     const tt = el("div", "pc-tt");
-    tt.append(el("span", "pc-type", { termin: "Termin", umfrage: it.art === "termin" ? "Terminfindung" : "Abstimmung", notiz: "Notiz" }[it.typ] || ""));
+    const ty = el("span", "pc-type", { termin: "Termin", umfrage: it.art === "termin" ? "Terminfindung" : "Abstimmung", notiz: "Notiz" }[it.typ] || "");
+    if (it.wichtig) ty.prepend(el("span", "pc-imp", "Wichtig"));
+    if (it.geschlossen) ty.append(" · beendet"); if (it.archiviert) ty.append(" · archiviert");
+    tt.append(ty);
     tt.append(el("b", null, it.titel || "(ohne Titel)"));
     const meta = [];
     if (it.typ === "termin") { if (it.datum) meta.push(wdate(it.datum) + (it.zeit ? `, ${it.zeit} Uhr` : "")); if (it.ort) meta.push(it.ort); }
@@ -3402,13 +3418,22 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     $("planFilter").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.f === planFilter)));
     const want = { alle: null, termine: "termin", umfragen: "umfrage", notizen: "notiz" }[planFilter];
     const items = planItems.filter(it => !want || it.typ === want), today = todayIso();
-    const up = items.filter(it => it.typ === "termin" && (it.datum || "") >= today).sort((a, b) => (a.datum + (a.zeit || "")).localeCompare(b.datum + (b.zeit || "")));
-    const polls = items.filter(it => it.typ === "umfrage").sort((a, b) => (!!a.geschlossen - !!b.geschlossen) || (b.erstellt || 0) - (a.erstellt || 0));
-    const notes = items.filter(it => it.typ === "notiz").sort((a, b) => (b.geaendert || b.erstellt || 0) - (a.geaendert || a.erstellt || 0));
-    const past = items.filter(it => it.typ === "termin" && (it.datum || "") < today).sort((a, b) => b.datum.localeCompare(a.datum));
-    const sec = (title, arr) => { if (!arr.length) return; list.append(el("h3", "plan-h", title)); arr.forEach(it => list.append(planCard(it))); };
-    sec("Nächste Termine", up); sec("Abstimmungen", polls); sec("Notizen", notes);
-    if (past.length) { const d = el("details", "plan-past"); d.append(el("summary", null, `Vergangene Termine (${past.length})`)); past.forEach(it => d.append(planCard(it))); list.append(d); }
+    // aktiv = kommender Termin, offene Abstimmung, nicht archivierte Notiz
+    const active = it => it.typ === "termin" ? (it.datum || "") >= today : it.typ === "umfrage" ? !it.geschlossen : !it.archiviert;
+    const byDate = (a, b) => (a.datum + (a.zeit || "")).localeCompare(b.datum + (b.zeit || "")), byNew = (a, b) => (b.geaendert || b.erstellt || 0) - (a.geaendert || a.erstellt || 0);
+    const imp = items.filter(it => it.wichtig && active(it)).sort((a, b) => (a.typ === "termin" && b.typ === "termin") ? byDate(a, b) : (a.typ === "termin" ? -1 : b.typ === "termin" ? 1 : byNew(a, b)));
+    const rest = items.filter(it => !(it.wichtig && active(it)));
+    const up = rest.filter(it => it.typ === "termin" && active(it)).sort(byDate);
+    const polls = rest.filter(it => it.typ === "umfrage" && active(it)).sort((a, b) => (b.erstellt || 0) - (a.erstellt || 0));
+    const notes = rest.filter(it => it.typ === "notiz" && active(it)).sort(byNew);
+    const past = rest.filter(it => it.typ === "termin" && !active(it)).sort((a, b) => b.datum.localeCompare(a.datum));
+    const closed = rest.filter(it => it.typ === "umfrage" && !active(it)).sort(byNew);
+    const arch = rest.filter(it => it.typ === "notiz" && !active(it)).sort(byNew);
+    const sec = (title, arr, cls) => { if (!arr.length) return; list.append(el("h3", "plan-h" + (cls ? " " + cls : ""), title)); arr.forEach(it => list.append(planCard(it))); };
+    const fold = (key, title, arr) => { if (!arr.length) return; const d = el("details", "plan-past"); d.open = planFold.has(key); d.ontoggle = () => { d.open ? planFold.add(key) : planFold.delete(key); };
+      d.append(el("summary", null, `${title} (${arr.length})`)); arr.forEach(it => d.append(planCard(it))); list.append(d); };
+    sec("Wichtig", imp, "imp"); sec("Nächste Termine", up); sec("Abstimmungen", polls); sec("Notizen", notes);
+    fold("umfrage", "Beendete Abstimmungen", closed); fold("notiz", "Archivierte Notizen", arch); fold("termin", "Vergangene Termine", past);
     if (!list.children.length) {
       const e = el("div", "empty"); e.append(el("strong", null, planStarted ? "Noch nichts geplant" : "Planung wird geladen …"));
       if (planStarted) e.append("Lege oben einen Termin, eine Abstimmung (z. B. zur Terminfindung) oder eine Notiz an.");
