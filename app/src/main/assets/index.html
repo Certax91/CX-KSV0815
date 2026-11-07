@@ -496,6 +496,8 @@ section.settings .setgrid>.field{background:var(--surface);border:1px solid var(
 }
 /* ---------- Vereins-Version: eigener Spieler ---------- */
 #meBtn{padding:6px 12px;font-size:14px;border-color:var(--gold);color:var(--gold-ink);font-weight:700}
+.me-open.check{border-color:var(--r4);background:color-mix(in srgb,var(--r4) 12%,transparent);color:var(--ink);font-weight:600}
+.standings .c-owe.chk{color:var(--r4)}
 .me-open{display:block;width:100%;text-align:left;border:1px solid var(--red);background:var(--red-soft);color:var(--red);border-radius:8px;padding:8px 12px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
 .me-open[hidden]{display:none}
 .pcard.me{box-shadow:0 0 0 2px var(--ink) inset}
@@ -1259,7 +1261,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
       const cnt = Array(Math.max(maxPl, 1)).fill(0);
       list.forEach(g => {
         const away0 = isAbsent(g, p.id), pl0 = g.places?.[p.id];
-        if (away0) { if (g.excluded) missedF++; else missed++; }   // Fehlen getrennt nach Pflichttagen (Saisonwertung) und freien Tagen, nie als letzter Platz
+        if (away0) { if (g.excluded) missedF++; else missed++; }   // Fehlen getrennt nach Pflichttagen (Saisonwertung) und sonstigen Tagen, nie als letzter Platz
         else if (!g.excluded && pl0 && pl0 > 1 && pl0 === worstOf(g)) lasts++;
         if (!g.excluded) { const pl = g.places?.[p.id]; if (pl) { const w = g.double ? 2 : 1; placeSum += pl * w; placedW += w; placed++; cnt[pl - 1] = (cnt[pl - 1] || 0) + 1; } }
         owe += openAmt(g, p.id);
@@ -1307,8 +1309,14 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     const list = inSeason(), st = stats(list).filter(s => s.act || !s.p.hidden);
     const box = $("standings"); box.textContent = "";
     const mine = st.find(s => s.p.id === myPid()), mo = $("meOpen");
-    mo.hidden = !(mine && mine.owe > 0);
-    if (!mo.hidden) { mo.textContent = `Du hast offene Beträge: ${eur(mine.owe)} – antippen zum Bezahlen`; mo.onclick = () => openDetail(mine.p.id); }
+    const sumSt = (pid, want) => list.filter(g => payOf(g, pid) === want).reduce((a, g) => a + openAmt(g, pid), 0);
+    const myOpen = mine ? sumSt(mine.p.id, "open") : 0, myChk = mine ? sumSt(mine.p.id, "check") : 0;
+    mo.hidden = !(myOpen > 0 || myChk > 0); mo.classList.toggle("check", !(myOpen > 0));
+    if (!mo.hidden) {
+      mo.textContent = myOpen > 0 ? `Du hast offene Beträge: ${eur(myOpen)}${myChk > 0 ? ` (weitere ${eur(myChk)} in Prüfung)` : ""} – antippen zum Bezahlen`
+        : `Deine Zahlung über ${eur(myChk)} wird vom Kassierer geprüft – nichts weiter zu tun.`;
+      mo.onclick = () => openDetail(mine.p.id);
+    }
     const ko = $("kassOpen"); ko.textContent = "";
     if (window.KSV_ME && isKass()) {
       const chk = cfg.players.map(p => ({ p, sum: games.filter(g => payOf(g, p.id) === "check").reduce((a, g) => a + openAmt(g, p.id), 0) })).filter(x => x.sum > 0);
@@ -1340,7 +1348,8 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
       // Kompakte Zeile fürs Handy: Rang · Name mit Platzverteilung · Platzsumme · Ø Platz · Betrag
       const main = el("div", "c-main"), nm = el("span", "c-name", s.p.name), bar = el("div", "dbar");
       if (s.p.id === myPid()) nm.append(el("span", "c-du", "Du"));
-      if (s.owe > 0) nm.append(el("span", "c-owe", "offen " + eur(s.owe)));
+      if (s.owe > 0) { const o = list.filter(g => payOf(g, s.p.id) === "open").reduce((a, g) => a + openAmt(g, s.p.id), 0);
+        nm.append(o > 0 ? el("span", "c-owe", "offen " + eur(o)) : el("span", "c-owe chk", "in Prüfung")); }
       const tot = s.cnt.reduce((a, x) => a + (x || 0), 0);
       s.cnt.forEach((c2, k) => { if (c2) { const seg = el("span", "m" + Math.min(k + 1, 8)); seg.style.flex = String(c2); seg.title = `${c2}× Platz ${k + 1}`; bar.append(seg); } });
       main.append(nm); if (tot) main.append(bar);
@@ -1457,8 +1466,8 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     tile("Am wenigsten gefehlt", mL && nPf ? mL.names.join(", ") : "–", mL && nPf ? (mL.v ? `${mL.names.length > 1 ? "je " : ""}${mL.v}× gefehlt${ofP}` : "an keinem Pflichttag gefehlt") : "");
     if (nFr) {
       const fM = leaders(st.filter(s => !s.p.guest), "nF"), fL = leaders(st.filter(s => !s.p.guest), "nF", true);
-      tile("Freie Tage: am öftesten dabei", fM && fM.v ? fM.names.join(", ") : "–", fM && fM.v ? `${fM.names.length > 1 ? "je " : ""}${fM.v}× von ${nFr} Tagen ohne Wertung` : "");
-      tile("Freie Tage: am seltensten dabei", fL ? fL.names.join(", ") : "–", fL ? `${fL.names.length > 1 ? "je " : ""}${fL.v}× von ${nFr} Tagen ohne Wertung` : "");
+      tile("Sonstige Tage: am öftesten dabei", fM && fM.v ? fM.names.join(", ") : "–", fM && fM.v ? `${fM.names.length > 1 ? "je " : ""}${fM.v}× von ${nFr} sonstigen Tagen` : "");
+      tile("Sonstige Tage: am seltensten dabei", fL ? fL.names.join(", ") : "–", fL ? `${fL.names.length > 1 ? "je " : ""}${fL.v}× von ${nFr} sonstigen Tagen` : "");
     }
     renderChart(days);
     renderStatTable(st);
@@ -1511,7 +1520,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
       { k: "name", h: "Spieler", v: s => s.p.name, txt: s => s.p.name },
       { k: "n", h: "Spieltage", v: s => s.n, txt: s => String(s.n), good: "max" },
       { k: "share", h: "Teilnahme Pflicht", v: s => s.share, txt: s => s.dP ? nf0.format(s.share * 100) + " %" : "–", good: "max" },
-      ...(st.some(s => s.dF) ? [{ k: "nF", h: "Freie Tage", v: s => s.nF, txt: s => `${s.nF} / ${s.dF}`, good: "max" }] : []),
+      ...(st.some(s => s.dF) ? [{ k: "nF", h: "Sonstige Tage", v: s => s.nF, txt: s => `${s.nF} / ${s.dF}`, good: "max" }] : []),
       { k: "total", h: "Spielgeld €", v: s => s.total.m, txt: s => eur(s.total.m), good: lowGood ? "min" : "max" },
       { k: "totalP", h: "Spielgeld Punkte", v: s => s.total.p, txt: s => pts(s.total.p), good: lowGood ? "min" : "max" },
       { k: "fees", h: "Beiträge", v: s => s.fees, txt: s => eur(s.fees) },
@@ -2152,7 +2161,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     tile("Siege", String(s.wins), s.placed ? `Podest ${(s.cnt[0] || 0) + (s.cnt[1] || 0) + (s.cnt[2] || 0)}× · Quote ${nf0.format(s.wins / s.placed * 100)} %` : "");
     tile("Letzte Plätze", String(s.lasts || 0), "ohne Fehltage");
     tile("Gefehlt", String(s.missed || 0), s.dP ? `von ${s.dP} Pflichttagen` : "keine Pflichttage");
-    tile("Spieltage", String(s.n), [s.dP ? `Pflicht ${s.nP || 0}/${s.dP} (${nf0.format(s.share * 100)} %)` : "", s.dF ? `frei ${s.nF || 0}/${s.dF}` : ""].filter(Boolean).join(" · "));
+    tile("Spieltage", String(s.n), [s.dP ? `Pflicht ${s.nP || 0}/${s.dP} (${nf0.format(s.share * 100)} %)` : "", s.dF ? `sonstige ${s.nF || 0}/${s.dF}` : ""].filter(Boolean).join(" · "));
     tile("Spielgeld", s.paid ? show(s.total) : "–", s.avg ? `Ø ${show(s.avg)} je Abend` : "");
     tile("Beiträge", eur(s.fees), `Gesamt ${eur(s.total.m + s.fees)}`);
     tile("Bester Abend", s.best ? show(s.best.m) : "–", s.best ? fmtDate(s.best.d) : "");
@@ -2480,7 +2489,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
         { k: "Siege", n: String(s.wins), d: s.placed ? `Podest ${(s.cnt[0] || 0) + (s.cnt[1] || 0) + (s.cnt[2] || 0)}× · Quote ${nf0.format(s.wins / s.placed * 100)} %` : "" },
         { k: "Letzte Plätze", n: String(s.lasts || 0), d: "ohne Fehltage" },
         { k: "Gefehlt", n: String(s.missed || 0), d: s.dP ? `von ${s.dP} Pflichttagen` : "keine Pflichttage" },
-        { k: "Spieltage", n: String(s.n), d: [s.dP ? `Pflicht ${s.nP || 0}/${s.dP}` : "", s.dF ? `frei ${s.nF || 0}/${s.dF}` : ""].filter(Boolean).join(" · ") },
+        { k: "Spieltage", n: String(s.n), d: [s.dP ? `Pflicht ${s.nP || 0}/${s.dP}` : "", s.dF ? `sonstige ${s.nF || 0}/${s.dF}` : ""].filter(Boolean).join(" · ") },
         { k: "Gesamt", n: eur(s.total.m + s.fees), d: `Spielgeld ${eur(s.total.m)} + Beiträge ${eur(s.fees)}` },
         { k: "Ø je Abend", n: s.avg ? show(s.avg) : "–" },
         { k: "Bester Abend", n: s.best ? show(s.best.m) : "–", d: s.best ? fmtDate(s.best.d) : "" },
@@ -3684,7 +3693,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
       ["Spieltage", s => s.n, v => String(v), "high"],
       ["Teilnahme Pflichttage", s => s.dP ? s.share : null, v => v == null ? "–" : Math.round(v * 100) + " %", "high"],
       ["Gefehlt (Pflicht)", s => s.missed, v => String(v), "low"],
-      ...(S.some(s => s.dF) ? [["Freie Tage dabei", s => s.nF, (v, s) => `${v} von ${s.dF}`, "high"]] : []),
+      ...(S.some(s => s.dF) ? [["Sonstige Tage dabei", s => s.nF, (v, s) => `${v} von ${s.dF}`, "high"]] : []),
       [cfg.view === "points" ? "Punkte gesamt" : "Spielgeld gesamt", s => val(s.total), (v, s) => show(s.total), cfg.dir],
       ["Ø je Spieltag", s => s.avg ? val(s.avg) : null, (v, s) => s.avg ? show(s.avg) : "–", cfg.dir],
       ["Platzsumme", s => s.placed ? s.placeSum : null, v => v == null ? "–" : String(v), "low"],
