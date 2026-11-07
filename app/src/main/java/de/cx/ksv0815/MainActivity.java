@@ -2,6 +2,13 @@ package de.cx.ksv0815;
 
 import android.app.Activity;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.pm.PackageInstaller;
+import android.provider.Settings;
+import java.io.InputStream;
+import java.lang.ref.WeakReference;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.content.ContentResolver;
@@ -53,6 +60,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         web = new WebView(this);
+        current = new WeakReference<>(this);
         boolean night = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
         if (night) web.setBackgroundColor(0xFF0E0E0E);
         setContentView(web);
@@ -161,6 +169,55 @@ public class MainActivity extends Activity {
     }
 
     /** Schnittstelle für die Seite: Dateien in „Downloads“ speichern und teilen. */
+    // ---------- App-Update aus den GitHub-Releases ----------
+    private static WeakReference<MainActivity> current = new WeakReference<>(null);
+    private static final String UPDATE_PREFIX = "https://github.com/Certax91/CX-KSV0815/releases/download/";
+
+    /** Zustand an die Web-Oberfläche melden (window.__ksvUpd). */
+    static void updateState(String state, String val) {
+        MainActivity a = current.get();
+        if (a == null || a.web == null) return;
+        String js = "window.__ksvUpd && window.__ksvUpd(" + JSONObject.quote(state) + "," + JSONObject.quote(val == null ? "" : val) + ")";
+        a.runOnUiThread(() -> a.web.evaluateJavascript(js, null));
+    }
+
+    private void downloadAndInstall(String url) {
+        new Thread(() -> {
+            PackageInstaller.Session session = null;
+            try {
+                HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+                c.setInstanceFollowRedirects(true);
+                c.setConnectTimeout(15000); c.setReadTimeout(30000);
+                int code = c.getResponseCode();
+                if (code != 200) throw new Exception("Download nicht möglich (" + code + ")");
+                long total = c.getContentLengthLong();
+                PackageInstaller pi = getPackageManager().getPackageInstaller();
+                PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+                params.setAppPackageName(getPackageName());
+                if (Build.VERSION.SDK_INT >= 31) params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED);
+                int id = pi.createSession(params);
+                session = pi.openSession(id);
+                try (InputStream in = c.getInputStream(); OutputStream out = session.openWrite("ksv.apk", 0, total > 0 ? total : -1)) {
+                    byte[] buf = new byte[64 * 1024]; long done = 0; int n, last = -1;
+                    while ((n = in.read(buf)) > 0) {
+                        out.write(buf, 0, n); done += n;
+                        if (total > 0) { int pct = (int) (done * 100 / total); if (pct != last && pct % 5 == 0) { last = pct; updateState("progress", String.valueOf(pct)); } }
+                    }
+                    session.fsync(out);
+                }
+                Intent cb = new Intent(this, UpdateReceiver.class);
+                int flags = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0);
+                PendingIntent pIntent = PendingIntent.getBroadcast(this, 42, cb, flags);
+                updateState("install", "");
+                session.commit(pIntent.getIntentSender());
+                session.close();
+            } catch (Exception e) {
+                if (session != null) try { session.abandon(); } catch (Exception ignored) { }
+                updateState("error", e.getMessage() != null ? e.getMessage() : e.toString());
+            }
+        }).start();
+    }
+
     private class Bridge {
         private Uri save(String name, String base64, String mime) throws Exception {
             byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
@@ -183,6 +240,27 @@ public class MainActivity extends Activity {
         }
 
         /** true, wenn das Handy im dunklen Modus ist (für die Darstellung „Automatisch“). */
+        /** Darf die App Updates installieren („Aus dieser Quelle zulassen“)? */
+        @JavascriptInterface
+        public boolean canInstallUpdates() {
+            return getPackageManager().canRequestPackageInstalls();
+        }
+
+        @JavascriptInterface
+        public void openInstallSettings() {
+            runOnUiThread(() -> {
+                try { startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName()))); }
+                catch (Exception e) { Toast.makeText(MainActivity.this, "Einstellung nicht gefunden", Toast.LENGTH_LONG).show(); }
+            });
+        }
+
+        /** Update herunterladen und installieren – nur Dateien aus den Releases dieses Repositorys. */
+        @JavascriptInterface
+        public void installUpdate(String url) {
+            if (url == null || !url.startsWith(UPDATE_PREFIX) || !url.endsWith(".apk")) { updateState("error", "Ungültige Update-Adresse"); return; }
+            downloadAndInstall(url);
+        }
+
         /** Daten für das Startbildschirm-Widget (Tabellenstand, Termin, offener Betrag). */
         @JavascriptInterface
         public void updateWidget(String json) {

@@ -53,12 +53,20 @@ jobs:
           name: KSV-0815-apk
           path: KSV-0815.apk
 
+      - name: Änderung für die Update-Anzeige
+        id: notes
+        env:
+          MSG: ${{ github.event.head_commit.message }}
+        run: echo "first=$(printf '%s' "$MSG" | head -n1 | tr -d '\r')" >> "$GITHUB_OUTPUT"
+
       - name: Als Release veröffentlichen
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: KSV 08/15 – Version 1.0.${{ github.run_number }}
           body: |
+            Neu: ${{ steps.notes.outputs.first }}
+
             Zum Installieren auf dem Handy unten **KSV-0815.apk** antippen und herunterladen,
             dann die Datei öffnen und „Installieren“ wählen.
           files: KSV-0815.apk

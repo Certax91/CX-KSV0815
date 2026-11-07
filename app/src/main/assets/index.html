@@ -805,6 +805,14 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
 .vs-legend span{display:inline-flex;align-items:center;gap:6px}
 .vs-legend i,.vs-tl i{width:14px;height:3px;border-radius:2px;background:var(--c);display:inline-block}
 .vs-tl{display:flex;align-items:center;gap:6px}
+/* ---------- App-Update ---------- */
+.upd-box{display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:6px}
+.upd-box[hidden],.upd-bar[hidden]{display:none}
+.upd-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;border:1.5px solid var(--gold);background:var(--gold-soft);border-radius:12px;padding:10px 12px;margin:8px 0}
+.ub-t{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 180px}
+.ub-t b{font-size:15px} .ub-t span{font-size:13px;color:var(--muted)}
+.ub-a{display:flex;gap:6px;align-items:center}
+.ub-a .btn{padding:8px 14px}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -915,6 +923,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
         </div>
       </div></div>
   </header>
+  <div class="upd-bar" id="updBar" role="status" hidden></div>
 
   <div class="toolbar" role="group" aria-label="Zeitraum und Anzeige">
     <div class="grp" id="cmpGrp">
@@ -1088,6 +1097,10 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
       </div>
     </div>
     <div class="app-version" id="appVersion"></div>
+    <div class="upd-box" id="updBox" hidden>
+      <button class="iconbtn" id="updCheck" type="button">Nach Update suchen</button>
+      <span class="msg" id="updMsg" aria-live="polite"></span>
+    </div>
   </section>
 </div>
 
@@ -1196,7 +1209,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     if (season.startsWith("s:")) { const l = selList("s:").filter(id => ss.some(x => x.id === id)); season = l.length ? "s:" + l.join(",") : "all"; }
     if (season.startsWith("y:")) { const l = selList("y:").filter(y => years.includes(y)); season = l.length ? "y:" + l.join(",") : "all"; }
     const sl = selList("s:"), yl = selList("y:");
-    $("pSeason").textContent = !ss.length ? "Saison (keine angelegt)" : sl.length === 1 ? seasonName(ss.find(x => x.id === sl[0])) : sl.length ? `${sl.length} Saisons` : "Saison";
+    $("pSeason").textContent = !ss.length ? "Saison" : sl.length === 1 ? seasonName(ss.find(x => x.id === sl[0])) : sl.length ? `${sl.length} Saisons` : "Saison";
     $("pYear").textContent = yl.length === 1 ? yl[0] : yl.length ? `${yl.length} Jahre` : "Jahr";
     $("pSeason").classList.toggle("on", sl.length > 0); $("pYear").classList.toggle("on", yl.length > 0);
     $("pSeason").disabled = !ss.length;
@@ -3707,6 +3720,67 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     }
   }
 
+
+  // ---------- App-Update (nur Android-App): neue Version aus GitHub prüfen und direkt installieren ----------
+  const UPD_API = "https://api.github.com/repos/Certax91/CX-KSV0815/releases/latest";
+  const verNum = v => { const m = String(v || "").match(/(\d+)\.(\d+)\.(\d+)/); return m ? +m[1] * 1e6 + +m[2] * 1e3 + +m[3] : 0; };
+  let updInfo = null;
+  async function updCheck(manual) {
+    const cur = window.KSV_VERSION || "lokal";
+    if (!window.AndroidApp?.installUpdate || !verNum(cur)) { if (manual) $("updMsg").textContent = "Update-Prüfung gibt es nur in der installierten Android-App."; return; }
+    if (manual) { $("updMsg").textContent = "Suche nach Updates …"; $("updCheck").disabled = true; }
+    try {
+      const r = await fetch(UPD_API, { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" });
+      if (!r.ok) throw new Error("GitHub antwortet nicht (" + r.status + ")");
+      const j = await r.json(), apk = (j.assets || []).find(a => /\.apk$/i.test(a.name));
+      try { localStorage.setItem("ksv-upd-check", String(Date.now())); } catch {}
+      if (!apk || verNum(j.tag_name) <= verNum(cur)) { updInfo = null; updBar(); if (manual) $("updMsg").textContent = `Du hast die neueste Version (${cur}).`; return; }
+      const notes = String(j.body || "").split("\n").map(x => x.trim()).filter(x => /^neu:/i.test(x)).map(x => x.replace(/^neu:\s*/i, "")).join(" ");
+      updInfo = { ver: j.tag_name.replace(/^v/, ""), url: apk.browser_download_url, size: apk.size, notes };
+      if (manual) $("updMsg").textContent = `Version ${updInfo.ver} ist verfügbar.`;
+      updBar(manual);
+    } catch (e) { if (manual) $("updMsg").textContent = "Prüfung fehlgeschlagen: " + (navigator.onLine === false ? "keine Internetverbindung." : e.message); }
+    finally { $("updCheck").disabled = false; }
+  }
+  function updBar(force) {
+    const b = $("updBar"); b.textContent = "";
+    let skip = ""; try { skip = localStorage.getItem("ksv-upd-skip") || ""; } catch {}
+    if (!updInfo || (!force && skip === updInfo.ver)) { b.hidden = true; return; }
+    const t = el("div", "ub-t"); t.append(el("b", null, `Update auf Version ${updInfo.ver} verfügbar`));
+    if (updInfo.notes) t.append(el("span", null, updInfo.notes));
+    const go = el("button", "btn", "Installieren"); go.type = "button"; go.id = "updGo"; go.onclick = updInstall;
+    const later = el("button", "iconbtn", "Später"); later.type = "button";
+    later.onclick = () => { try { localStorage.setItem("ksv-upd-skip", updInfo.ver); } catch {} b.hidden = true; };
+    const act = el("div", "ub-a"); act.append(go, later);
+    b.append(t, act); b.hidden = false;
+  }
+  async function updInstall() {
+    if (!updInfo) return;
+    const A = window.AndroidApp;
+    if (A.canInstallUpdates && !A.canInstallUpdates()) {
+      const ok = await appConfirm({ title: "Installation erlauben",
+        text: "Damit die App Updates selbst installieren kann, einmalig in den Android-Einstellungen „Aus dieser Quelle zulassen“ für KSV 08/15 einschalten.\nDanach mit „Zurück“ in die App und erneut auf „Installieren“ tippen.",
+        ok: "Einstellungen öffnen" });
+      if (ok) A.openInstallSettings();
+      return;
+    }
+    const go = $("updGo"); if (go) { go.disabled = true; go.textContent = "Lade …"; }
+    $("updMsg").textContent = "Update wird geladen …";
+    A.installUpdate(updInfo.url);
+  }
+  // Rückmeldungen der App beim Herunterladen und Installieren
+  window.__ksvUpd = (state, val) => {
+    const go = $("updGo"), m = $("updMsg");
+    if (state === "progress") { if (go) go.textContent = `Lade … ${val} %`; m.textContent = `Update wird geladen … ${val} %`; }
+    else if (state === "install") { if (go) go.textContent = "Installiere …"; m.textContent = "Bitte die Installation bestätigen."; }
+    else if (state === "error") { if (go) { go.disabled = false; go.textContent = "Erneut versuchen"; } m.textContent = "Update fehlgeschlagen: " + val; say("Update fehlgeschlagen: " + val, true); }
+    else if (state === "cancel") { if (go) { go.disabled = false; go.textContent = "Installieren"; } m.textContent = "Installation abgebrochen."; }
+  };
+  if (window.AndroidApp?.installUpdate) {
+    $("updBox").hidden = false; $("updCheck").onclick = () => updCheck(true);
+    let last = 0; try { last = +localStorage.getItem("ksv-upd-check") || 0; } catch {}
+    if (Date.now() - last > 6 * 3600e3) setTimeout(() => updCheck(false), 2500);   // automatisch höchstens alle 6 Stunden
+  }
   // ---------- Rubriken (Navigationsleiste unten) ----------
   const PANE = { stand: "secStand", book: "secBook", stat: "secStat", regel: "secRegel", plan: "secPlan", set: "settings" };
   let tab = "stand", lastPeriod = "all", prevTab = "stand";
