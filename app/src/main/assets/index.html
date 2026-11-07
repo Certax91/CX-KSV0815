@@ -824,6 +824,17 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
 .plan-card.archived{opacity:.85}
 .plan-past{display:flex;flex-direction:column}
 .plan-past + .plan-past{margin-top:-4px}
+/* ---------- Hinweis auf Neues in der Planung ---------- */
+.plan-hint{display:flex;flex-direction:column;gap:6px}
+.plan-hint[hidden]{display:none}
+.ph-row{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;border:1px solid var(--r4);background:color-mix(in srgb,var(--r4) 12%,transparent);color:var(--ink);border-radius:8px;padding:8px 12px;font:inherit;font-size:14px;cursor:pointer}
+.ph-row.ph-vote{border-color:var(--gold);background:var(--gold-soft)}
+.ph-t b{font-weight:700}
+.ph-s{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-new{display:inline-block;background:var(--r4);color:#fff;border-radius:999px;padding:1px 7px;margin-right:6px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;vertical-align:1px}
+.plan-card.flash{animation:pcFlash 1.6s ease-out}
+@keyframes pcFlash{0%,40%{box-shadow:0 0 0 3px var(--r4)}100%{box-shadow:0 0 0 0 transparent}}
+@media (prefers-reduced-motion:reduce){.plan-card.flash{animation:none;outline:3px solid var(--r4)}}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -970,6 +981,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
   <section id="secStand" aria-labelledby="h-stand" style="display:flex;flex-direction:column;gap:12px">
     <div class="sechead"><h2 id="h-stand">Tabelle</h2></div>
     <button class="me-open" id="meOpen" type="button" hidden></button>
+    <div class="plan-hint" id="planHint" role="status" hidden></div>
     <div class="kass-open" id="kassOpen" hidden></div>
     <div class="standings" id="standings"></div>
   </section>
@@ -3043,18 +3055,52 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
             if (tab === "plan") planRender();
           }, () => {});
         if ((it.typ === "termin" || it.typ === "umfrage") && !planSubs[it.id])
-          planSubs[it.id] = db.collection("planung").doc(it.id).collection("stimmen").onSnapshot(v => { planVotes[it.id] = v.docs.map(d => ({ uid: d.id, ...d.data() })); if (tab === "plan") planRender(); }, () => {});
+          planSubs[it.id] = db.collection("planung").doc(it.id).collection("stimmen").onSnapshot(v => { planVotes[it.id] = v.docs.map(d => ({ uid: d.id, ...d.data() })); if (tab === "plan") planRender(); planBadge(); }, () => {});
       });
       if (tab === "plan") { planSeen(); planRender(); } else planBadge();
+      planBadge();
     }, e => planMsg("Planung nicht verfügbar: " + (e.message || e.code), true));
   }
   // roter Punkt an „Planung“, wenn andere etwas Neues angelegt oder geändert haben
   function planBadge() {
-    let seen = 0; try { seen = +localStorage.getItem("ksv-plan-seen") || 0; } catch {}
+    let seen = 0; try { seen = +localStorage.getItem("ksv-plan-seen") || 0; if (!seen) { seen = Date.now(); localStorage.setItem("ksv-plan-seen", String(seen)); } } catch {}
     const neu = planItems.some(it => (it.geaendert || it.erstellt || 0) > seen && it.von !== ME().uid);
     document.querySelector('.tabbar button[data-tab="plan"]')?.classList.toggle("dot", neu && tab !== "plan");
+    planHint(seen);
   }
-  function planSeen() { try { localStorage.setItem("ksv-plan-seen", String(Date.now())); } catch {} planBadge(); }
+  let planSeenPrev = 0;   // Stand vor dem Öffnen der Planung – damit neue Einträge dort als „Neu“ markiert bleiben
+  function planSeen() {
+    try { if (tab === "plan" && !planSeenPrev) planSeenPrev = +localStorage.getItem("ksv-plan-seen") || Date.now(); localStorage.setItem("ksv-plan-seen", String(Date.now())); } catch {}
+    planBadge();
+  }
+  // Hinweis über der Tabelle: neue Einträge anderer und offene Abstimmungen ohne eigene Stimme
+  function planHint(seen) {
+    const box = $("planHint"); if (!box) return;
+    box.textContent = "";
+    if (!window.KSV_ME && !ME().uid) { box.hidden = true; return; }
+    const me = ME().uid, fresh = planItems.filter(it => (it.erstellt || 0) > seen && it.von !== me && !it.archiviert && !(it.typ === "termin" && (it.datum || "") < todayIso()));
+    const todo = planItems.filter(it => it.typ === "umfrage" && !it.geschlossen && planVotes[it.id] && !planVotes[it.id].some(v => v.uid === me));
+    const go = id => { planFocus = id || null; goTab("plan"); };
+    if (fresh.length) {
+      const cnt = t => fresh.filter(it => it.typ === t).length, parts = [];
+      const n = cnt("termin"), u = cnt("umfrage"), x = cnt("notiz");
+      if (n) parts.push(`${n} ${n === 1 ? "neuer Termin" : "neue Termine"}`);
+      if (u) parts.push(`${u} ${u === 1 ? "neue Abstimmung" : "neue Abstimmungen"}`);
+      if (x) parts.push(`${x} ${x === 1 ? "neue Notiz" : "neue Notizen"}`);
+      const b = el("button", "ph-row ph-new"); b.type = "button";
+      const t = el("span", "ph-t"); t.append(el("b", null, "Neu in der Planung: "), parts.join(", "));
+      const sub = el("span", "ph-s", fresh.slice(0, 3).map(it => it.titel || "(ohne Titel)").join(" · ") + (fresh.length > 3 ? " …" : ""));
+      b.append(t, sub); b.onclick = () => go(fresh.length === 1 ? fresh[0].id : null); box.append(b);
+    }
+    todo.sort((a, b) => (b.erstellt || 0) - (a.erstellt || 0)).slice(0, 3).forEach(it => {
+      const b = el("button", "ph-row ph-vote"); b.type = "button";
+      const t = el("span", "ph-t"); t.append(el("b", null, "Noch nicht abgestimmt: "), `„${it.titel || "Abstimmung"}“`);
+      b.append(t, el("span", "ph-s", "Antippen zum Abstimmen")); b.onclick = () => go(it.id); box.append(b);
+    });
+    if (todo.length > 3) { const b = el("button", "ph-row ph-vote"); b.type = "button"; b.append(el("span", "ph-t", `… und ${todo.length - 3} weitere offene Abstimmungen`)); b.onclick = () => go(null); box.append(b); }
+    box.hidden = !box.children.length;
+  }
+  let planFocus = null;
 
   function planVote(it, data) {
     const ref = db.collection("planung").doc(it.id).collection("stimmen").doc(ME().uid);
@@ -3341,6 +3387,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
   }
   function planCard(it) {
     const c = el("article", "plan-card t-" + it.typ + (it.geschlossen ? " closed" : "") + (it.wichtig ? " imp" : "") + (it.archiviert ? " archived" : ""));
+    c.dataset.id = it.id;
     const head = el("div", "pc-head");
     if (it.typ === "termin" && it.datum) {
       const d = new Date(it.datum + "T12:00:00"), cal = el("div", "pc-cal");
@@ -3350,6 +3397,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     const tt = el("div", "pc-tt");
     const ty = el("span", "pc-type", { termin: "Termin", umfrage: it.art === "termin" ? "Terminfindung" : "Abstimmung", notiz: "Notiz" }[it.typ] || "");
     if (it.wichtig) ty.prepend(el("span", "pc-imp", "Wichtig"));
+    if (planSeenPrev && (it.erstellt || 0) > planSeenPrev && it.von !== ME().uid) ty.prepend(el("span", "pc-new", "Neu"));
     if (it.geschlossen) ty.append(" · beendet"); if (it.archiviert) ty.append(" · archiviert");
     tt.append(ty);
     tt.append(el("b", null, it.titel || "(ohne Titel)"));
@@ -3841,7 +3889,8 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     if ((t === "stand" || t === "book") && isCmp()) { season = lastPeriod.startsWith("cmp:") ? "all" : lastPeriod; showTab(t); render(); return; }
     showTab(t);
     if (t === "regel") regelShow();
-    if (t === "plan") { planStart(); planSeen(); planRender(); }
+    if (t === "plan") { planStart(); planSeenPrev = 0; planSeen(); planRender();
+      if (planFocus) { const id = planFocus; planFocus = null; setTimeout(() => { const c = document.querySelector(`.plan-card[data-id="${CSS.escape(id)}"]`); if (c) { c.scrollIntoView({ block: "center", behavior: "smooth" }); c.classList.add("flash"); setTimeout(() => c.classList.remove("flash"), 1600); } }, 120); } }
   }
   function syncTab() {   // Zeitraum-Auswahl und Rubrik passen immer zusammen
     if (!isCmp()) lastPeriod = season;
