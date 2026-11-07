@@ -1314,7 +1314,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     mo.hidden = !(myOpen > 0 || myChk > 0); mo.classList.toggle("check", !(myOpen > 0));
     if (!mo.hidden) {
       mo.textContent = myOpen > 0 ? `Du hast offene Beträge: ${eur(myOpen)}${myChk > 0 ? ` (weitere ${eur(myChk)} in Prüfung)` : ""} – antippen zum Bezahlen`
-        : `Deine Zahlung über ${eur(myChk)} wird vom Kassierer geprüft – nichts weiter zu tun.`;
+        : `Deine Zahlung über ${eur(myChk)} wird vom Kassierer geprüft.`;
       mo.onclick = () => openDetail(mine.p.id);
     }
     const ko = $("kassOpen"); ko.textContent = "";
