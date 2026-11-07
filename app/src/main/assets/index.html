@@ -465,7 +465,7 @@ section.settings .setgrid>.field{background:var(--surface);border:1px solid var(
 .standings .stand-head,.pcard>.c-rk,.pcard>.c-main,.pcard>.c-ps,.pcard>.c-avg,.pcard>.v{display:none}
 @media (max-width:700px){
   .standings{display:flex;flex-direction:column;gap:4px}
-  .standings .stand-head,.standings .pcard{display:grid;grid-template-columns:24px minmax(0,1fr) 34px 38px 74px;gap:0 8px;align-items:center}
+  .standings .stand-head,.standings .pcard{display:grid;grid-template-columns:var(--tcols,24px minmax(0,1fr) 34px 38px 74px);gap:0 8px;align-items:center}
   .standings .stand-head{padding:0 10px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
   .standings .stand-head span:nth-child(n+3){text-align:right}
   .standings .pcard{padding:6px 10px;border-radius:8px;border-width:1px;min-height:42px}
@@ -835,6 +835,28 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
 .plan-card.flash{animation:pcFlash 1.6s ease-out}
 @keyframes pcFlash{0%,40%{box-shadow:0 0 0 3px var(--r4)}100%{box-shadow:0 0 0 0 transparent}}
 @media (prefers-reduced-motion:reduce){.plan-card.flash{animation:none;outline:3px solid var(--r4)}}
+/* ---------- Wählbare Spalten der Tabelle ---------- */
+.pcard>.c-col{display:none}
+@media (max-width:640px){
+  .standings .pcard>.c-col{display:block;text-align:right;font-family:var(--f-num);font-weight:600;font-size:15px;white-space:nowrap}
+  .standings .pcard>.c-col.dim{color:var(--muted)}
+  .standings .pcard>.c-col.strong{font-weight:700;font-size:16px}
+  .standings .pcard>.c-col .u{font-size:.8em}
+}
+.tcols{display:flex;flex-direction:column;gap:6px}
+.tcol{display:grid;grid-template-columns:70px 1fr;align-items:center;gap:8px}
+.tcol .label{margin:0}
+.tcol select{width:100%;min-width:0}
+/* ---------- Einstellungen aufklappbar ---------- */
+#settings .field.fold{border:1px solid var(--line);border-radius:10px;padding:0;gap:0;background:var(--bg)}
+#settings .field.fold:not(.open) > :not(.fold-h){display:none!important}
+#settings .field.fold.open{padding:0 12px 12px}
+#settings .field.fold.open > .fold-h{margin:0 -12px 8px;border-bottom:1px solid var(--line)}
+#settings .field.fold > .fold-lab{display:none!important}
+.fold-h{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;border:0;background:none;color:var(--ink);font:inherit;font-size:15px;font-weight:700;text-align:left;padding:12px;cursor:pointer;border-radius:10px}
+.fold-h::after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .15s;flex:none;margin-top:-4px}
+.field.fold.open > .fold-h::after{transform:rotate(-135deg);margin-top:4px}
+#settings .setgrid{align-items:start}
 </style>
 
 <div class="pd" id="em" hidden role="dialog" aria-modal="true" aria-labelledby="h-entry">
@@ -1099,6 +1121,12 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
         <input type="url" id="paypalLink" inputmode="url" autocomplete="off" placeholder="https://paypal.me/… oder Link zum PayPal-Pool" class="pp-input">
         <span class="msg" id="paypalMsg"></span>
       </div>
+      <div class="field">
+        <span class="label">Spalten der Tabelle</span>
+        <p class="msg" style="margin:0 0 6px">Welche drei Werte im Reiter Tabelle rechts neben dem Namen stehen. Die Reihenfolge der Plätze bleibt nach Platzsumme.</p>
+        <div class="tcols" id="tabColSel"></div>
+        <div class="actions"><button class="iconbtn" id="tabColReset" type="button">Standard wiederherstellen</button><span class="msg" id="tabColMsg"></span></div>
+      </div>
       <div class="field rules-wrap">
         <span class="label">Tackengeld, Abwesenheitsplatz und Monatsbeitrag</span>
         <div class="tablebox"><table class="rules" id="rulesTable"></table></div>
@@ -1317,6 +1345,25 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
   $("setBtn").onclick = () => goTab("set");
   $("logoutBtn").onclick = () => { if (window.KSV_LOGOUT) window.KSV_LOGOUT(); };
   $("setDone").onclick = () => goTab(prevTab && prevTab !== "set" ? prevTab : "stand");
+  // ---------- Frei wählbare Spalten der Tabelle (vom Verwalter, gilt für alle) ----------
+  const TAB_COLS = {
+    ps:      { h: "PS", lab: "Platzsumme", w: 34, v: s => s.placed ? String(s.placeSum) : "–" },
+    avgPl:   { h: "Ø Pl.", lab: "Ø Platz", w: 38, v: s => s.avgPlace ? nf1.format(Math.round(s.avgPlace * 10) / 10) : "–" },
+    geld:    { h: () => cfg.view === "points" ? "Punkte" : "Spielgeld", lab: "Spielgeld bzw. Punkte (je nach Ansicht)", w: 74, money: true, v: s => s.paid ? valEl(s.total) : "–" },
+    avgGeld: { h: "Ø Abend", lab: "Ø Spielgeld je Abend", w: 66, money: true, v: s => s.avg ? valEl(s.avg) : "–" },
+    teil:    { h: "Teiln.", lab: "Teilnahme an Pflichttagen in %", w: 44, v: s => s.dP ? nf0.format(s.share * 100) + " %" : "–" },
+    gefehlt: { h: "Gef.", lab: "Gefehlt an Pflichttagen", w: 34, v: s => s.dP ? String(s.missed) : "–" },
+    tage:    { h: "Tage", lab: "Gespielte Spieltage", w: 36, v: s => String(s.n) },
+    siege:   { h: "Siege", lab: "Siege (Platz 1)", w: 38, v: s => String(s.wins) },
+    siegq:   { h: "Siegq.", lab: "Siegquote in %", w: 44, v: s => s.placed ? nf0.format(s.wins / s.placed * 100) + " %" : "–" },
+    podest:  { h: "Pod.", lab: "Podestplätze (1.–3.)", w: 34, v: s => String((s.cnt[0] || 0) + (s.cnt[1] || 0) + (s.cnt[2] || 0)) },
+    letzter: { h: "Letzt.", lab: "Letzte Plätze", w: 38, v: s => String(s.lasts) },
+    beitr:   { h: "Beitr.", lab: "Monatsbeiträge", w: 66, money: true, v: s => s.feeN ? eur(s.fees) : "–" },
+    gesamt:  { h: "Gesamt", lab: "Gesamt (Spielgeld + Beiträge)", w: 74, money: true, v: s => eur(s.total.m + s.fees) },
+    offen:   { h: "Offen", lab: "Offener Betrag", w: 66, money: true, v: s => s.owe > 0 ? eur(s.owe) : "–" }
+  };
+  const TAB_DEF = ["ps", "avgPl", "geld"];
+  const tabCols = () => { const c = Array.isArray(cfg.tabCols) ? cfg.tabCols.filter(k => TAB_COLS[k]) : []; return c.length === 3 ? c : TAB_DEF; };
   function renderStandings() {
     const list = inSeason(), st = stats(list).filter(s => s.act || !s.p.hidden);
     const box = $("standings"); box.textContent = "";
@@ -1341,7 +1388,9 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     if (!cfg.players.length) { box.innerHTML = `<div class="empty" style="grid-column:1/-1"><strong>Noch keine Spieler angelegt</strong>Unten in den Einstellungen die Mitspieler eintragen.</div>`; return; }
     const ranked = [...st].sort((a, b) => (!!a.p.guest - !!b.p.guest) || (b.placed > 0) - (a.placed > 0) || a.placeSum - b.placeSum || b.wins - a.wins || (a.avgPlace ?? 99) - (b.avgPlace ?? 99));
     widgetRanked = ranked; try { widgetLabel = rangeLabel(list); } catch { widgetLabel = ""; } widgetPush();
-    const hd = el("div", "stand-head"); ["#", "Spieler", "PS", "Ø Pl.", cfg.view === "points" ? "Punkte" : "Spielgeld"].forEach(t => hd.append(el("span", null, t))); box.append(hd);
+    const tc = tabCols().map(k => TAB_COLS[k]);
+    box.style.setProperty("--tcols", `24px minmax(0,1fr) ${tc.map(c => c.w + "px").join(" ")}`);
+    const hd = el("div", "stand-head"); ["#", "Spieler", ...tc.map(c => typeof c.h === "function" ? c.h() : c.h)].forEach(t => hd.append(el("span", null, t))); box.append(hd);
     ranked.forEach((s, i) => {
       const lastIdx = ranked.reduce((a, x, k) => x.placed && !x.p.guest ? k : a, -1);
       const cls = !s.placed || s.p.guest ? "" : i === lastIdx && lastIdx > 0 ? " last" : i === 0 ? " lead" : i === 1 ? " r2" : i === 2 ? " r3" : "";
@@ -1365,10 +1414,9 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
       const tot = s.cnt.reduce((a, x) => a + (x || 0), 0);
       s.cnt.forEach((c2, k) => { if (c2) { const seg = el("span", "m" + Math.min(k + 1, 8)); seg.style.flex = String(c2); seg.title = `${c2}× Platz ${k + 1}`; bar.append(seg); } });
       main.append(nm); if (tot) main.append(bar);
-      c.append(el("span", "c-rk", s.p.guest ? "G" : s.placed ? `${i + 1}.` : "–"), main,
-        el("span", "c-ps", s.placed ? String(s.placeSum) : "–"),
-        el("span", "c-avg", s.avgPlace ? nf1.format(Math.round(s.avgPlace * 10) / 10) : "–"),
-        s.paid ? valEl(s.total) : el("span", "v", "–"));
+      c.append(el("span", "c-rk", s.p.guest ? "G" : s.placed ? `${i + 1}.` : "–"), main);
+      tc.forEach((col, k) => { const v = col.v(s), x = el("span", "c-col" + (k === 1 ? " dim" : k === 2 ? " strong" : ""));
+        if (typeof v === "string") x.textContent = v; else x.append(...v.childNodes); c.append(x); });
       c.tabIndex = 0; c.setAttribute("role", "button"); c.setAttribute("aria-label", `${s.p.name}: Details öffnen`);
       c.onclick = () => openDetail(s.p.id); c.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail(s.p.id); } };
       box.append(c);
@@ -1751,7 +1799,7 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
       if (!db || !canWrite) return;
       try { await db.doc("config/main").set({ players: cfg.players, mode: cfg.mode, view: cfg.view, dir: cfg.dir,
         rules: rules().map(r => ({ from: r.from || "", factor: r.factor, absentPlace: r.absentPlace, fee: r.fee })),
-        feeRules: [], seasons: cfg.seasons || [], paypal: cfg.paypal || "" }); }
+        feeRules: [], seasons: cfg.seasons || [], paypal: cfg.paypal || "", tabCols: cfg.tabCols || null }); }
       catch { say("Einstellungen konnten nicht gespeichert werden.", true); }
     }, 500);
   }
@@ -1765,7 +1813,22 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     const v = window.KSV_VERSION || "lokal", d = window.KSV_BUILD ? fmtDate(window.KSV_BUILD) : "";
     $("appVersion").textContent = `KSV 08/15 Spielbuch · Version ${v}${d ? " vom " + d : ""} · ${window.AndroidApp ? "Android-App" : "Web-Version"}`;
   })();
+  function renderTabColSel() {
+    const box = $("tabColSel"); if (!box) return;
+    const cur = tabCols(); box.textContent = "";
+    cur.forEach((k, i) => {
+      const lab = el("label", "tcol"), sel = el("select", "pselect");
+      lab.append(el("span", "label", `Spalte ${i + 1}`), sel);
+      Object.entries(TAB_COLS).forEach(([key, c]) => { const o = el("option", null, c.lab); o.value = key; sel.append(o); });
+      sel.value = k; sel.disabled = !canWrite;
+      sel.onchange = () => { const n = [...tabCols()]; n[i] = sel.value; cfg.tabCols = n; saveCfg(); render(); $("tabColMsg").textContent = "Gespeichert – gilt für alle."; };
+      box.append(lab);
+    });
+    $("tabColReset").disabled = !canWrite;
+  }
+  $("tabColReset").onclick = () => { cfg.tabCols = null; saveCfg(); render(); $("tabColMsg").textContent = "Standard wiederhergestellt."; };
   function renderSettings() {
+    renderTabColSel();
     if (document.activeElement !== $("paypalLink")) $("paypalLink").value = cfg.paypal || "";
     $("paypalLink").disabled = !canWrite;
     $("dLow").checked = cfg.dir === "low"; $("dHigh").checked = cfg.dir === "high";
@@ -3861,6 +3924,24 @@ body:not([data-tab="stat"]) #secVs{display:none!important}
     let last = 0; try { last = +localStorage.getItem("ksv-upd-check") || 0; } catch {}
     if (Date.now() - last > 6 * 3600e3) setTimeout(() => updCheck(false), 2500);   // automatisch höchstens alle 6 Stunden
   }
+
+  // ---------- Einstellungen: jeder Abschnitt aufklappbar (auch die von cloud.js / shim.js nachträglich eingefügten) ----------
+  const setOpen = new Set(); try { JSON.parse(localStorage.getItem("ksv-set-open") || "[]").forEach(x => setOpen.add(x)); } catch {}
+  function foldSettings() {
+    document.querySelectorAll("#settings .field").forEach(f => {
+      if (f.parentElement.closest("#settings .field")) return;   // nur oberste Abschnitte
+      if ([...f.children].some(c => c.classList.contains("fold-h"))) return;
+      const lab = [...f.children].find(c => c.classList.contains("label")); if (!lab) return;
+      const title = lab.textContent.split(" · ")[0].trim(), key = title;
+      lab.classList.add("fold-lab");
+      const h = el("button", "fold-h", title); h.type = "button";
+      const set = o => { f.classList.toggle("open", o); h.setAttribute("aria-expanded", String(o)); };
+      h.onclick = () => { const o = !f.classList.contains("open"); o ? setOpen.add(key) : setOpen.delete(key); try { localStorage.setItem("ksv-set-open", JSON.stringify([...setOpen])); } catch {} set(o); };
+      f.classList.add("fold"); f.prepend(h); set(setOpen.has(key));
+    });
+  }
+  foldSettings();
+  new MutationObserver(() => foldSettings()).observe($("settings"), { childList: true, subtree: true });
   // ---------- Rubriken (Navigationsleiste unten) ----------
   const PANE = { stand: "secStand", book: "secBook", stat: "secStat", regel: "secRegel", plan: "secPlan", set: "settings" };
   let tab = "stand", lastPeriod = "all", prevTab = "stand";
