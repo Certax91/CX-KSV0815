@@ -37,6 +37,19 @@ jobs:
       - name: Versionsnummer eintragen
         run: echo "window.KSV_VERSION = \"1.0.${{ github.run_number }}\"; window.KSV_BUILD = \"$(date -u +%Y-%m-%d)\";" > app/src/main/assets/version.js
 
+      - name: Push für Android (Secret GOOGLE_SERVICES_JSON oder Datei app/google-services.json)
+        env:
+          GSJ: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GSJ" ]; then printf '%s' "$GSJ" > app/google-services.json; fi
+          if [ -f app/google-services.json ]; then echo "google-services.json vorhanden – Push wird eingebaut"; else echo "::warning::Keine google-services.json – die App wird ohne Push-Nachrichten gebaut."; fi
+
+      - name: Web-Push-Schlüssel eintragen (Secret FIREBASE_VAPID_KEY, optional)
+        env:
+          VAPID: ${{ secrets.FIREBASE_VAPID_KEY }}
+        run: |
+          if [ -n "$VAPID" ]; then sed -i "s|vapidKey: \"[^\"]*\"|vapidKey: \"$VAPID\"|" app/src/main/assets/firebase-config.js && echo "VAPID-Schlüssel eingetragen"; else echo "Kein FIREBASE_VAPID_KEY – Web-Push bleibt aus"; fi
+
       - name: Firebase-Bibliothek für die Vereins-Version einbinden
         run: bash scripts/firebase-sdk.sh
 
@@ -88,6 +101,12 @@ jobs:
       - name: Versionsnummer eintragen
         run: echo "window.KSV_VERSION = \"1.0.${{ github.run_number }}\"; window.KSV_BUILD = \"$(date -u +%Y-%m-%d)\";" > app/src/main/assets/version.js
 
+      - name: Web-Push-Schlüssel eintragen (Secret FIREBASE_VAPID_KEY, optional)
+        env:
+          VAPID: ${{ secrets.FIREBASE_VAPID_KEY }}
+        run: |
+          if [ -n "$VAPID" ]; then sed -i "s|vapidKey: \"[^\"]*\"|vapidKey: \"$VAPID\"|" app/src/main/assets/firebase-config.js && echo "VAPID-Schlüssel eingetragen"; else echo "Kein FIREBASE_VAPID_KEY – Web-Push bleibt aus"; fi
+
       - name: Firebase-Bibliothek einbinden
         run: bash scripts/firebase-sdk.sh
 
@@ -121,6 +140,13 @@ jobs:
         if: env.HAS_KEY == 'true'
         run: echo "window.KSV_VERSION = \"1.0.${{ github.run_number }}\"; window.KSV_BUILD = \"$(date -u +%Y-%m-%d)\";" > app/src/main/assets/version.js
 
+      - name: Web-Push-Schlüssel eintragen (Secret FIREBASE_VAPID_KEY, optional)
+        if: env.HAS_KEY == 'true'
+        env:
+          VAPID: ${{ secrets.FIREBASE_VAPID_KEY }}
+        run: |
+          if [ -n "$VAPID" ]; then sed -i "s|vapidKey: \"[^\"]*\"|vapidKey: \"$VAPID\"|" app/src/main/assets/firebase-config.js && echo "VAPID-Schlüssel eingetragen"; else echo "Kein FIREBASE_VAPID_KEY – Web-Push bleibt aus"; fi
+
       - name: Firebase-Bibliothek einbinden
         if: env.HAS_KEY == 'true'
         run: bash scripts/firebase-sdk.sh
@@ -133,6 +159,7 @@ jobs:
 
       - name: Auf Firebase Hosting veröffentlichen
         if: env.HAS_KEY == 'true'
+        continue-on-error: true   # fehlende Hosting-Rechte des Dienstkontos sollen den Bau nicht rot machen
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}

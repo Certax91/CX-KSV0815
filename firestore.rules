@@ -79,9 +79,9 @@ service cloud.firestore {
 
     match /nutzer/{uid} {
       allow read: if (request.auth != null && request.auth.uid == uid) || istVerwalter();
-      // eigene Auswahl der Benachrichtigungs-Themen
+      // eigene Auswahl der Benachrichtigungs-Themen und Meldung der genutzten App-Version
       allow update: if request.auth != null && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['push']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['push', 'app']);
       allow create: if request.auth != null && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['email', 'name', 'rolle', 'spielerId', 'angelegt'])
         && request.resource.data.email == request.auth.token.email

@@ -94,6 +94,9 @@
     ".konto-row .ctl{display:flex;gap:6px;flex-wrap:wrap;align-items:center}",
     ".konto-row select{border:1px solid var(--line,#ccc);background:var(--bg,#fff);color:var(--ink,#111);border-radius:6px;padding:5px 6px;font:inherit;font-size:13px;max-width:100%}",
     ".konto-row select.need{border-color:var(--gold,#c98a12)}",
+    ".konto-row .who .app-info{white-space:normal;margin-top:2px}",
+    ".konto-row .who .app-info.old{color:var(--red,#c62828);font-weight:600}",
+    ".app-sum{font-size:13px;color:var(--muted,#666);margin:2px 0 6px}",
     ".konto-me{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:14px}",
     ".push-list{display:flex;flex-direction:column;gap:4px;margin-top:6px}",
     ".push-cb{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.35;cursor:pointer}",
@@ -231,11 +234,42 @@
     }, function (e) { viewError("Dein Konto konnte nicht geladen werden (" + msgOf(e) + ")."); });
   }
 
+  // ---------- App-Version an das eigene Konto melden (für die Übersicht des Verwalters) ----------
+  var appGemeldet = 0;
+  function appPlattform() {
+    if (window.AndroidApp) return "Android-App";
+    var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    var heim = window.matchMedia && (matchMedia("(display-mode: standalone)").matches || navigator.standalone);
+    if (ios) return heim ? "iPhone (Startbildschirm)" : "iPhone-Browser";
+    if (/Android/i.test(navigator.userAgent)) return heim ? "Android (Startbildschirm)" : "Android-Browser";
+    return "Browser am PC";
+  }
+  function appMelden(uid, sofort) {
+    var jetzt = Date.now();
+    if (!sofort && jetzt - appGemeldet < 6 * 3600e3) return;   // höchstens alle 6 Stunden erneut
+    appGemeldet = jetzt;
+    var push = false; try { push = !!localStorage.getItem("ksv-push-token"); } catch (e) { }
+    fs.doc("nutzer/" + uid).update({ app: { version: String(window.KSV_VERSION || "lokal"), build: String(window.KSV_BUILD || ""),
+      plattform: appPlattform(), push: push, zuletzt: jetzt } }).catch(function () { });
+  }
+  var versNr = function (v) { var m = /^1\.0\.(\d+)$/.exec(String(v || "")); return m ? +m[1] : 0; };
+  function seitText(t) {
+    if (!t) return "";
+    var min = Math.round((Date.now() - t) / 60000);
+    if (min < 2) return "gerade eben";
+    if (min < 60) return "vor " + min + " Min.";
+    var std = Math.round(min / 60); if (std < 24) return "vor " + std + " Std.";
+    var tg = Math.round(std / 24); if (tg < 14) return "vor " + tg + (tg === 1 ? " Tag" : " Tagen");
+    var d = new Date(t); return "am " + String(d.getDate()).padStart(2, "0") + "." + String(d.getMonth() + 1).padStart(2, "0") + "." + d.getFullYear();
+  }
+
   function start(u, d) {
     started = true;
     var canWrite = !!DARF_SCHREIBEN[d.rolle];
     me = { uid: u.uid, email: u.email, name: d.name || "", rolle: d.rolle, spielerId: d.spielerId || null, canWrite: canWrite, admin: d.rolle === "admin", kassierer: !!d.kassierer };
     window.KSV_ME = me;
+    appMelden(u.uid, true);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) appMelden(u.uid, false); });
     window.KSV_LOGOUT = function () {
       var t = ""; try { t = localStorage.getItem("ksv-push-token") || ""; localStorage.removeItem("ksv-push-token"); } catch (e) { }
       (t ? fs.doc("geraete/" + t).delete().catch(function () { }) : Promise.resolve()).then(function () { auth.signOut(); });
@@ -378,7 +412,7 @@
     window.__ksvPushToken = function (tok, err) {
       btn.disabled = false;
       if (!tok) { st.textContent = "Einschalten fehlgeschlagen" + (err ? ": " + err : "."); return; }
-      tokenSpeichern(tok, "android").then(function () { token = tok; draw(); }).catch(function (e) { st.textContent = msgOf(e); });
+      tokenSpeichern(tok, "android").then(function () { token = tok; draw(); appMelden(me.uid, true); }).catch(function (e) { st.textContent = msgOf(e); });
     };
     btn.onclick = function () {
       btn.disabled = true;
@@ -386,13 +420,13 @@
         var t = token; token = ""; try { localStorage.removeItem("ksv-push-token"); } catch (e) { }
         fs.doc("geraete/" + t).delete().catch(function () { });
         if (art === "web" && firebase.messaging) try { firebase.messaging().deleteToken().catch(function () { }); } catch (e) { }
-        btn.disabled = false; draw(); return;
+        btn.disabled = false; draw(); appMelden(me.uid, true); return;
       }
       st.textContent = "Wird eingeschaltet …";
       if (art === "android") { window.AndroidApp.requestPush(); return; }
       webToken().then(function (tok) { return tokenSpeichern(tok, "web").then(function () { token = tok; }); })
         .catch(function (e) { st.textContent = "Einschalten fehlgeschlagen: " + (e && e.message || e); })
-        .then(function () { btn.disabled = false; if (token) draw(); });
+        .then(function () { btn.disabled = false; if (token) { draw(); appMelden(me.uid, true); } });
     };
     // Themen (für alle Geräte des Kontos)
     fs.doc("nutzer/" + me.uid).get().then(function (snap) {
@@ -447,6 +481,7 @@
 
     if (!me.admin) return;
     var box = h("div", "field"); box.appendChild(h("span", "label", "Mitglieder & Rechte"));
+    var sum = h("div", "app-sum"); box.appendChild(sum);
     var list = h("div"); box.appendChild(list);
     box.appendChild(h("span", "msg", "Neue Mitglieder registrieren sich selbst in der App. Hier schaltest du sie frei, ordnest sie einem Spieler zu und legst die Rechte fest. Kassierer bestätigen gemeldete Zahlungen."));
     var umsg = h("span", "msg", ""); box.appendChild(umsg);
@@ -456,10 +491,17 @@
       list.textContent = "";
       var waiting = 0;
       users.sort(function (a, b) { return (a.d.rolle === "warten" ? 0 : 1) - (b.d.rolle === "warten" ? 0 : 1) || String(a.d.name).localeCompare(String(b.d.name), "de"); });
+      var neueste = Math.max(versNr(window.KSV_VERSION), ...users.map(function (x) { return versNr(x.d.app && x.d.app.version); }));
+      var veraltet = users.filter(function (x) { return x.d.rolle !== "warten" && (!x.d.app || versNr(x.d.app.version) < neueste); }).length;
+      sum.textContent = neueste ? "Neueste Version: 1.0." + neueste + (veraltet ? " · " + veraltet + (veraltet === 1 ? " Mitglied nutzt" : " Mitglieder nutzen") + " eine ältere oder unbekannte Version" : " · alle sind aktuell") : "";
       users.forEach(function (x) {
         var d = x.d, self = x.id === me.uid, row = h("div", "konto-row" + (d.rolle === "warten" ? " wait" : ""));
         if (d.rolle === "warten") waiting++;
-        var who = h("div", "who"); who.appendChild(h("b", null, (d.name || "?") + (self ? " (du)" : ""))); who.appendChild(h("span", null, d.email || "")); row.appendChild(who);
+        var who = h("div", "who"); who.appendChild(h("b", null, (d.name || "?") + (self ? " (du)" : ""))); who.appendChild(h("span", null, d.email || ""));
+        var a = d.app, alt = !a || versNr(a.version) < neueste;
+        who.appendChild(h("span", "app-info" + (alt && d.rolle !== "warten" ? " old" : ""), !a ? "Version unbekannt – App seit der Versionsanzeige noch nicht geöffnet (Update fällig)"
+          : (a.plattform || "?") + " · Version " + (a.version || "?") + (alt ? " – Update fällig" : "") + " · zuletzt aktiv " + seitText(a.zuletzt) + " · Benachrichtigungen " + (a.push ? "an" : "aus")));
+        row.appendChild(who);
         var ctl = h("div", "ctl");
         var sp = h("select"); sp.setAttribute("aria-label", "Spieler von " + (d.name || ""));
         var o0 = h("option", null, "– Spieler wählen –"); o0.value = ""; sp.appendChild(o0);

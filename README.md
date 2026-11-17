@@ -54,3 +54,22 @@ Ohne Eintrag (`null`) speichert die App wie bisher nur lokal.
 - `app/src/main/assets/shim.js` – lokale Speicherung, PDF-Speichern, Datensicherung
 - `app/src/main/java/de/cx/ksv0815/MainActivity.java` – App-Hülle (WebView)
 - `.github/workflows/build.yml` – Bau der APK über GitHub Actions
+
+## Push-Nachrichten einrichten (einmalig, durch den Verwalter)
+Alle Werte kommen aus der Firebase-Konsole des Projekts **ksv0815**.
+
+1. **Android-App registrieren:** Projektübersicht → „App hinzufügen“ → Android → Paketname `de.cx.ksv0815`
+   → `google-services.json` herunterladen. Den Inhalt als GitHub-Secret **GOOGLE_SERVICES_JSON** anlegen
+   (oder die Datei nach `app/google-services.json` hochladen).
+2. **Dienstkonto:** Projekteinstellungen → Dienstkonten → „Neuen privaten Schlüssel generieren“.
+   Den kompletten Inhalt der JSON-Datei als Secret **FIREBASE_SERVICE_ACCOUNT** anlegen.
+   Nie ins Repository hochladen! Damit verschickt `push.yml` alle 10 Minuten die Nachrichten.
+3. **Web-Push (Browser/iPhone, optional):** Projekteinstellungen → Cloud Messaging → Web-Push-Zertifikate
+   → „Schlüsselpaar generieren“ → den öffentlichen Schlüssel als Secret **FIREBASE_VAPID_KEY** anlegen.
+4. Unter **Actions → App bauen → Run workflow** neu bauen und die neue App installieren.
+5. In der App unter Einstellungen → Benachrichtigungen → „Auf diesem Gerät einschalten“.
+
+## Versionen der Mitglieder
+Die App meldet beim Start Version, Gerät und „zuletzt aktiv“ an das eigene Konto.
+Der Verwalter sieht das unter Einstellungen → Mitglieder & Rechte; ältere Versionen sind rot markiert.
+Dafür muss die aktuelle `firestore.rules` in der Firebase-Konsole veröffentlicht sein.
